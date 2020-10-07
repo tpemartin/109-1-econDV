@@ -10,17 +10,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Makecondition
 
-```{r}
+```{r makecondition}
 library(dplyr)
 library(tidyverse)
 library(googlesheets4)
 library(econDV)
 library(lubridate)
 # startSalary
-startSalary %=% read_sheet(
-  "https://docs.google.com/spreadsheets/d/1PPWeFGqedVsgZmV81MeA0oJDCBkj5upkHltlWap7xUY/edit#gid=1835013852",
-  skip = 3
-)
+# startSalary <- read_sheet(
+#   "https://docs.google.com/spreadsheets/d/1PPWeFGqedVsgZmV81MeA0oJDCBkj5upkHltlWap7xUY/edit#gid=1835013852",
+#   skip = 3
+# )
 # WDI::WDIsearch(string="Inflation") -> inflation_search
 # inflation_search
 
@@ -62,6 +62,107 @@ df_newTaipeiYouBike %=% jsonlite::fromJSON(
   "https://data.ntpc.gov.tw/api/datasets/71CD1490-A2DF-4198-BEF1-318479775E8A/json"
 ) # data.frame class
 ```
+
+```{r cpiTWopenData}
+cpiTWopenData = {
+  library(xml2)
+  require(econDV)
+  cpiTW <- read_xml("https://www.dgbas.gov.tw/public/data/open/Stat/price/PR0101A1M.xml") 
+xml2::as_list(cpiTW) -> list_cpiTW
+  list_cpiTW
+}
+
+```
+
+styler
+
+```{r}
+{
+require(purrr)
+sublist <- list_cpiTW$DataSet
+# .x 1:77112
+(sublist[[1]]$Item == "總指數(民國105年=100)") & (
+  sublist[[1]]$TYPE == "年增率(%)"
+)
+(sublist[[2]]$Item == "總指數(民國105年=100)") & (
+  sublist[[2]]$TYPE == "年增率(%)"
+)
+
+(sublist[[77000]]$Item == "總指數(民國105年=100)") & (
+  sublist[[77000]]$TYPE == "年增率(%)"
+)
+
+~ {
+  (.x$Item == "總指數(民國105年=100)") & (
+    .x$TYPE == "年增率(%)"
+  )
+}
+sublist %>%
+  map(
+    ~ {
+      (.x$Item == "總指數(民國105年=100)") & (
+        .x$TYPE == "年增率(%)"
+      )
+    }
+  ) -> pickTarget
+  
+  head(
+    unlist(pickTarget),20)
+  
+  totalCPIList <- sublist[unlist(pickTarget)]
+  View(totalCPIList)
+  
+}
+```
+
+
+```{r}
+
+  ##
+  totalCPIList[[1]]
+
+  data.frame(
+    Item=totalCPIList[[1]]$Item[[1]],
+    TIME_PERIOD=totalCPIList[[1]]$TIME_PERIOD[[1]],
+    inflationRate=totalCPIList[[1]]$Item_VALUE[[1]]
+  ) 
+  
+  totalCPIList[[2]]
+
+  data.frame(
+    Item=totalCPIList[[2]]$Item[[1]],
+    TIME_PERIOD=totalCPIList[[2]]$TIME_PERIOD[[1]],
+    inflationRate=totalCPIList[[2]]$Item_VALUE[[1]]
+  ) 
+  
+  totalCPIList %>%
+    map_dfr(
+  ~{data.frame(
+    Item=.x$Item[[1]],
+    TIME_PERIOD=.x$TIME_PERIOD[[1]],
+    inflationRate=.x$Item_VALUE[[1]]
+  ) }
+      
+    ) -> df_inflationTW
+  
+  View(df_inflationTW)
+  
+```
+
+
+```{r}
+a <- c(2, 5, 8)
+a[c(T,F,T)]
+alist <- 
+  list(
+    2,
+    5,
+    8
+  )
+alist[c(T,F,T)]
+```
+
+
 
 # youBikeRightClass
 ```{r youBikeRightClass}
@@ -145,6 +246,60 @@ df_inflationTW={
   df_inflationTW
 }
 ```
+## ggplot trial
+
+```{r}
+
+```
+
+
+```{r baseCanvas}
+baseCanvas = {
+  df_inflationTW %>%
+  ggplot()
+  }
+```
+
+```{r geom1}
+geom1 = {
+  baseCanvas+
+  geom_line(
+    aes(x=year, y=inflation)
+  )
+}
+```
+
+
+
+```{r geom1}
+geom1 =
+  {
+    df_inflationTW %>%
+      ggplot()+
+      geom_line(
+        aes(x=year, y=inflation)
+      )
+  }
+```
+
+```{r geom2}
+geom2 =  {
+    df_inflationTW %>%
+      ggplot()+
+      geom_line(
+        aes(x=year, y=inflation),
+        size=2
+        
+      )
+  }
+
+```
+
+
+```{r}
+df_inflationTW %>% names
+```
+
 
 # df_worldInflation
 ```{r df_worldInflation}
