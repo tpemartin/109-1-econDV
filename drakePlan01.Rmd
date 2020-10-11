@@ -271,21 +271,10 @@ geom1 = {
 
 
 
-```{r geom1}
-geom1 =
-  {
-    df_inflationTW %>%
-      ggplot()+
-      geom_line(
-        aes(x=year, y=inflation)
-      )
-  }
-```
 
 ```{r geom2}
 geom2 =  {
-    df_inflationTW %>%
-      ggplot()+
+    baseCanvas+
       geom_line(
         aes(x=year, y=inflation),
         size=2
