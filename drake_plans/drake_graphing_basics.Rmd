@@ -6,9 +6,18 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+font_add("Noto Sans TC", # 把字形加到R系統裡，取名為notoSansTC family
+         regular="NotoSansTC-Regular.otf", # family裡的regular字體檔名
+         bold="NotoSansTC-Bold.otf") # family裡的bold字體檔名
+font_families() # 查看notoSansTC family有沒有成功加入
 ```
 
 ```{r makecondition}
+library(readr)
+library(ggplot2)
+library(drake)
+library(rmd2drake)
+library(dplyr)
 library(showtext)
 showtext_auto()
 theme(
@@ -16,12 +25,8 @@ theme(
   ) %>%
   theme_set()
 
-library(readr)
-library(ggplot2)
-library(drake)
-library(rmd2drake)
-library(dplyr)
-library(tidyselect)
+rprojroot::is_rstudio_project -> pj
+pj$make_fix_file() -> root
 ```
 
 ## Data 
@@ -92,6 +97,18 @@ ggline <- {
 }
 ```
 
+```{r ggpoint}
+ggpoint <- {
+  ggline +
+    geom_point(
+      aes(x = 西元年月, y = `定存利率-一個月-固定`),
+      subsetDataTWbank
+    )
+}
+
+```
+
+
 ```{r ggline3M, drake=F}
 ggline3M <- {
   ggline +
@@ -141,6 +158,69 @@ ggline2Y3Y = {
 }
 ```
 
+```{r canvas2}
+canvas2 = ggplot(data=subsetDataTWbank)
+```
+
+```{r ggline2Y3Y, drake=F}
+ggline2Y3Y = {
+  canvas +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-一個月-固定`),
+      subsetDataTWbank
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三個月-固定`),
+      subsetDataTWbank,
+      color = "blue"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-一年期-固定`),
+      subsetDataTWbank,
+      color = "green"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-二年期-固定`),
+      subsetDataTWbank,
+      color = "brown"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三年期-固定`),
+      subsetDataTWbank, 
+      color = "red"
+    )
+        
+}
+```
+
+
+```{r ggline2Y3Y_2}
+ggline2Y3Y_2 = {
+  canvas2 +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-一個月-固定`)
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三個月-固定`),
+      color = "blue"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-一年期-固定`),
+      color = "green"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-二年期-固定`),
+      color = "brown"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三年期-固定`),
+      color = "red"
+    ) 
+    
+}
+```
+
+
 ```{r ggTwbInterestRates}
 ggTwbInterestRates= {
   ggline2Y3Y +
@@ -154,14 +234,30 @@ ggTwbInterestRates= {
 }
 ```
 
+```{r ggTwbInterestRates}
+ggTwbInterestRates_bw= {
+  ggTwbInterestRates +
+    theme_bw()
+}
+```
 
 ```{r saveGgline}
 saveGgline = {
   ggsave(
     ggTwbInterestRates, 
     file=file.path(
-      root(),"img/graphingBasics_ggline.svg"
+      root(),"img/ggTwbInterestRates.svg"
       ), width=8, height=5)
 }
 ```
 
+## openSVG
+
+```{r ,afterMake=T, drake=F}
+svgOpen(
+      file.path(
+      root(),"img/ggTwbInterestRates.svg"
+      )
+      )
+
+```

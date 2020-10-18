@@ -1,6 +1,67 @@
+library(dplyr)
+library(tidyverse)
+library(googlesheets4)
+library(econDV)
+library(lubridate)
+# startSalary
+# startSalary <- read_sheet(
+#   "https://docs.google.com/spreadsheets/d/1PPWeFGqedVsgZmV81MeA0oJDCBkj5upkHltlWap7xUY/edit#gid=1835013852",
+#   skip = 3
+# )
+# WDI::WDIsearch(string="Inflation") -> inflation_search
+# inflation_search
+
+# target_series <- inflation_search[1,]
+world_inflation %=% WDI::WDI(
+  indicator = "FP.CPI.TOTL.ZG" # target_series[["indicator"]]
+)
+
+df_cpiTW %=% {
+  con <- url("https://www.dropbox.com/s/8585yr3t0bbcb5b/df_cpiTW.rda?dl=1")
+  load(file = con)
+  df_cpiTW
+}
+
+df_newTaipeiYouBike %=% jsonlite::fromJSON(
+  "https://data.ntpc.gov.tw/api/datasets/71CD1490-A2DF-4198-BEF1-318479775E8A/json"
+) # data.frame classlibrary(googlesheets4)
+library(econDV)
+# startSalary
+startSalary %=% read_sheet(
+  "https://docs.google.com/spreadsheets/d/1PPWeFGqedVsgZmV81MeA0oJDCBkj5upkHltlWap7xUY/edit#gid=1835013852",
+  skip = 3
+)
+# WDI::WDIsearch(string="Inflation") -> inflation_search
+# inflation_search
+
+# target_series <- inflation_search[1,]
+world_inflation %=% WDI::WDI(
+  indicator = "FP.CPI.TOTL.ZG" # target_series[["indicator"]]
+)
+
+df_cpiTW %=% {
+  con <- url("https://www.dropbox.com/s/8585yr3t0bbcb5b/df_cpiTW.rda?dl=1")
+  load(file = con)
+  df_cpiTW
+}
+
+df_newTaipeiYouBike %=% jsonlite::fromJSON(
+  "https://data.ntpc.gov.tw/api/datasets/71CD1490-A2DF-4198-BEF1-318479775E8A/json"
+)#data.frameclass
+options(rstudio_drake_cache = storr::storr_rds("/Users/martinl/Documents/GitHub/109-1-econDV/.dataCleaning", hash_algorithm = "xxhash64"))
+# no params in the frontmatter
 # plan_drakePlan01------------
 plan_drakePlan01=drake::drake_plan(
 # > plan begins -----------
+# >> cpiTWopenData--------------
+cpiTWopenData = {
+  library(xml2)
+  require(econDV)
+  cpiTW <- read_xml("https://www.dgbas.gov.tw/public/data/open/Stat/price/PR0101A1M.xml") 
+xml2::as_list(cpiTW) -> list_cpiTW
+  list_cpiTW
+},
+
 # >> youBikeRightClass--------------
 youBikeRightClass = { # deal with class
   df_newTaipeiYouBike %>% map(class)
@@ -78,6 +139,30 @@ df_inflationTW={
   df_inflationTW
 },
 
+# >> baseCanvas--------------
+baseCanvas = {
+  df_inflationTW %>%
+  ggplot()
+},
+
+# >> geom1--------------
+geom1 = {
+  baseCanvas+
+  geom_line(
+    aes(x=year, y=inflation)
+  )
+},
+
+# >> geom2--------------
+geom2 =  {
+    baseCanvas+
+      geom_line(
+        aes(x=year, y=inflation),
+        size=2
+        
+      )
+},
+
 # >> df_worldInflation--------------
 df_worldInflation={
   world_inflation %>%
@@ -137,26 +222,119 @@ world_inflationComplete_wide = {
 # > plan ends ------------
 )
 
-# make plan -----------------
-mk_plan_drakePlan01 = function(cachePath="/Users/martin/Github/109-1-econDV/.dataCleaning"){
-# no params in the frontmatter
+mk_plan_drakePlan01= function()
+{
+library(dplyr)
+library(tidyverse)
+library(googlesheets4)
+library(econDV)
+library(lubridate)
+# startSalary
+# startSalary <- read_sheet(
+#   "https://docs.google.com/spreadsheets/d/1PPWeFGqedVsgZmV81MeA0oJDCBkj5upkHltlWap7xUY/edit#gid=1835013852",
+#   skip = 3
+# )
+# WDI::WDIsearch(string="Inflation") -> inflation_search
+# inflation_search
 
+# target_series <- inflation_search[1,]
+world_inflation %=% WDI::WDI(
+  indicator = "FP.CPI.TOTL.ZG" # target_series[["indicator"]]
+)
 
-library(drake)
-options(rstudio_drake_cache = storr::storr_rds("/Users/martin/Github/109-1-econDV/.dataCleaning", hash_algorithm = "xxhash64"))
-make(plan_drakePlan01, cache=drake::drake_cache(path=cachePath))
+df_cpiTW %=% {
+  con <- url("https://www.dropbox.com/s/8585yr3t0bbcb5b/df_cpiTW.rda?dl=1")
+  load(file = con)
+  df_cpiTW
 }
 
-vis_plan_drakePlan01 <- function(cachePath="/Users/martin/Github/109-1-econDV/.dataCleaning"){
-# no params in the frontmatter
+df_newTaipeiYouBike %=% jsonlite::fromJSON(
+  "https://data.ntpc.gov.tw/api/datasets/71CD1490-A2DF-4198-BEF1-318479775E8A/json"
+) # data.frame classlibrary(googlesheets4)
+library(econDV)
+# startSalary
+startSalary %=% read_sheet(
+  "https://docs.google.com/spreadsheets/d/1PPWeFGqedVsgZmV81MeA0oJDCBkj5upkHltlWap7xUY/edit#gid=1835013852",
+  skip = 3
+)
+# WDI::WDIsearch(string="Inflation") -> inflation_search
+# inflation_search
 
-drake::vis_drake_graph(plan_drakePlan01, cache=drake::drake_cache(path=cachePath))
+# target_series <- inflation_search[1,]
+world_inflation %=% WDI::WDI(
+  indicator = "FP.CPI.TOTL.ZG" # target_series[["indicator"]]
+)
+
+df_cpiTW %=% {
+  con <- url("https://www.dropbox.com/s/8585yr3t0bbcb5b/df_cpiTW.rda?dl=1")
+  load(file = con)
+  df_cpiTW
 }
-meta_plan_drakePlan01=
-list(
-cachePath="/Users/martin/Github/109-1-econDV/.dataCleaning",
-readd=function(t) {
-  drake::readd(t,cache=drake::drake_cache(path="/Users/martin/Github/109-1-econDV/.dataCleaning"))},
-clean=function(t=NULL) {
-  drake::clean(t,cache=drake::drake_cache(path="/Users/martin/Github/109-1-econDV/.dataCleaning"))})
 
+df_newTaipeiYouBike %=% jsonlite::fromJSON(
+  "https://data.ntpc.gov.tw/api/datasets/71CD1490-A2DF-4198-BEF1-318479775E8A/json"
+)#data.frameclass
+options(rstudio_drake_cache = storr::storr_rds("/Users/martinl/Documents/GitHub/109-1-econDV/.dataCleaning", hash_algorithm = "xxhash64"))
+# no params in the frontmatter
+drake::make(plan_drakePlan01,
+cache=drake::drake_cache(
+  path="/Users/martinl/Documents/GitHub/109-1-econDV/.dataCleaning"))
+}
+vis_plan_drakePlan01= function()
+{
+library(dplyr)
+library(tidyverse)
+library(googlesheets4)
+library(econDV)
+library(lubridate)
+# startSalary
+# startSalary <- read_sheet(
+#   "https://docs.google.com/spreadsheets/d/1PPWeFGqedVsgZmV81MeA0oJDCBkj5upkHltlWap7xUY/edit#gid=1835013852",
+#   skip = 3
+# )
+# WDI::WDIsearch(string="Inflation") -> inflation_search
+# inflation_search
+
+# target_series <- inflation_search[1,]
+world_inflation %=% WDI::WDI(
+  indicator = "FP.CPI.TOTL.ZG" # target_series[["indicator"]]
+)
+
+df_cpiTW %=% {
+  con <- url("https://www.dropbox.com/s/8585yr3t0bbcb5b/df_cpiTW.rda?dl=1")
+  load(file = con)
+  df_cpiTW
+}
+
+df_newTaipeiYouBike %=% jsonlite::fromJSON(
+  "https://data.ntpc.gov.tw/api/datasets/71CD1490-A2DF-4198-BEF1-318479775E8A/json"
+) # data.frame classlibrary(googlesheets4)
+library(econDV)
+# startSalary
+startSalary %=% read_sheet(
+  "https://docs.google.com/spreadsheets/d/1PPWeFGqedVsgZmV81MeA0oJDCBkj5upkHltlWap7xUY/edit#gid=1835013852",
+  skip = 3
+)
+# WDI::WDIsearch(string="Inflation") -> inflation_search
+# inflation_search
+
+# target_series <- inflation_search[1,]
+world_inflation %=% WDI::WDI(
+  indicator = "FP.CPI.TOTL.ZG" # target_series[["indicator"]]
+)
+
+df_cpiTW %=% {
+  con <- url("https://www.dropbox.com/s/8585yr3t0bbcb5b/df_cpiTW.rda?dl=1")
+  load(file = con)
+  df_cpiTW
+}
+
+df_newTaipeiYouBike %=% jsonlite::fromJSON(
+  "https://data.ntpc.gov.tw/api/datasets/71CD1490-A2DF-4198-BEF1-318479775E8A/json"
+)#data.frameclass
+options(rstudio_drake_cache = storr::storr_rds("/Users/martinl/Documents/GitHub/109-1-econDV/.dataCleaning", hash_algorithm = "xxhash64"))
+# no params in the frontmatter
+drake::vis_drake_graph(plan_drakePlan01,
+cache=drake::drake_cache(
+  path="/Users/martinl/Documents/GitHub/109-1-econDV/.dataCleaning"))
+}
