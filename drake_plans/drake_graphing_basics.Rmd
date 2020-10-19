@@ -35,12 +35,7 @@ pj$make_fix_file() -> root
 big5bankInterestRates = read_csv("https://www.cbc.gov.tw/public/data/OpenData/A13Rate.csv")
 ```
 
-```{r}
-big5bankInterestRates$銀行 %>% unique()
-```
-```{r}
-big5bankInterestRates %>% names()
-```
+
 
   * 關於字串的操作請見: 108-2 資料科學程式設計（一）影片05-06的三支片，
       <https://vimeo.com/showcase/ntpu-programming-for-data-science>
@@ -58,7 +53,8 @@ subsetDataTWbank = {
        西元年月=lubridate::ymd(年月日)
     )  %>%
     select(
-      "銀行", "西元年月", matches("定存利率-([一三六]個月|[一二三]年期)-固定")
+      "銀行", "西元年月",
+      matches("定存利率-([一三六]個月|[一二三]年期)-固定")
     ) %>%
     filter(
       銀行=="臺灣銀行"
@@ -66,13 +62,6 @@ subsetDataTWbank = {
 }
 ```
 
-
-```{r}
-with(big5bankInterestRates, {
-         191100+as.integer(年月) -> mockDate
-         paste0(stringr::str_sub(mockDate,1,4),"-",str_sub(mockDate,5,6),"-01") # 加了01日
-       })
-```
 
 ```{r subsetDataTWbank, drake=F}
 subsetDataTWbank = read_csv(
@@ -94,6 +83,17 @@ ggline <- {
       aes(x = 西元年月, y = `定存利率-一個月-固定`),
       subsetDataTWbank
     )
+}
+```
+
+
+```{r ggLinePoint}
+ggLinePoint={
+  ggline +
+  geom_point(
+    mapping=aes(x=西元年月,y=`定存利率-一個月-固定`), 
+    subsetDataTWbank  
+  )
 }
 ```
 
