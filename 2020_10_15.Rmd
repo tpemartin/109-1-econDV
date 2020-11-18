@@ -1,0 +1,57 @@
+```{r}
+library(SOAR)
+Attach() # attach .R_Cache 
+
+obj1 <- 5
+Store(obj1)
+
+obj1 <- 3 # Won't change obj1 in cache, but create an obj1 in global environment.
+Store(obj1) # Unless store it in cache.
+
+Remove(obj1)
+```
+
+
+```{r}
+library(WDI)
+import_search <-
+  WDIsearch(string = "Imports of goods and services")
+world_import %=%
+    # WDI(indicator="NE.IMP.GNFS.ZS")
+    WDI(indicator = import_search[12, 1])
+```
+
+```{r}
+system.time(
+  world_import <-
+    WDI(indicator = import_search[12, 1])
+)
+Store(world_import)
+```
+
+```{r}
+myfun <- function(x,y){
+  
+  
+}
+
+myfun(x,y)
+```
+
+```{r}
+`%=%` <- function(x,y){
+  
+}
+`%=%`(x,y)
+x %=% y
+```
+
+
+```{r}
+library(econDV)
+system.time(
+  world_import %=%
+    WDI(indicator = import_search[12, 1])
+)
+```
+

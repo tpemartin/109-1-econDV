@@ -1,0 +1,242 @@
+---
+title: "台灣景氣循環"
+drake_cache: ".chart1_sunny"
+output: html_document
+params:
+  key: "公Aa-Ⅳ-1" 
+  memberNames: ["Mary", "cook"]
+  memberIds: ["410888292", "410772938"] 
+  imgPreName: "taiwanEconomicsGrowth.svg" 
+  imgPostName: "" 
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+  * 圖片一定要有Title, subtitle, 及資料來源。
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+library(scales)
+library(colorspace)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+```
+
+
+```{r}
+rgb(1,0,0)
+rgb(0,1,0)
+rgb(0,0,1)
+rgb(0.2, 0.35, 1)
+rgb(1,x*1,0)
+
+palette1 <- function(x){
+  return(
+    rgb(1, x, 0)
+  )
+}
+```
+
+```{r}
+palette1(0)
+palette1(0.889)
+```
+```{r}
+xx <- seq(0, 1, by=0.05)
+xx
+palette1(xx)
+```
+
+palette1 -> scale_color_myDesign
+```{r}
+ggplot()+
+  geom_....+
+  scale_color_myDesign(
+    
+  )
+```
+
+```{r}
+library(dplyr)
+scales::hue_pal(
+  h=c(0, 360)) -> myHue
+myHue(1) 
+myHue(2)
+myHue(3)
+```
+
+
+```{r}
+scale_color_myDesign_continuous <- function(...){
+    continuous_scale(
+      "color",
+      scale_name="scale_color_myDesign",
+      palette=palette1,
+      ...)
+
+}
+```
+
+```{r}
+test <- function(...){
+  a <- list(...)
+  browser()
+}
+test(a=3, 4, c="ABC")
+```
+```{r}
+select(var1, var2)
+```
+
+```{r}
+myQuasiPalette <- function(x){
+  
+}
+myPalette <- function(x){
+  map_chr(
+    x,
+    myQuasiPalette
+  )
+}
+```
+
+
+```{r}
+fbase <- function(x){
+  2*x
+}
+f <- function(y){
+  map_chr(
+    y,
+    fbase
+  )
+}
+
+c(1,3,2) %>% f()
+
+f(1)
+f(3)
+f(2)
+
+y=c(1,3,2)
+
+f(y[[1]])
+f(y[[2]])
+f(y[[3]])
+
+map(
+  y, f
+)
+```
+
+
+```{r}
+ggobj + scale_color_myDesign(
+  name="emotional magnitude",
+  breaks=
+  labels=
+)
+```
+
+
+```{r}
+# 製作獨家scale_color_XXX函數
+scale_color_myRY <- # <<drake_aes3>>
+  function(...){
+  continuous_scale(
+  "color", # 給什麼aesthetic元素用
+  "myRY_palette", # 有錯誤時要怎麼稱呼你的scale
+  palette=myRY_palette, # palette function: [0,1] -> color
+  ...)
+}
+```
+
+```{r}
+test <- function(...){
+  
+}
+
+```
+
+```{r}
+list(1, "a")
+c(1,2, 5)
+df %>%
+  mutate(
+    
+  )
+```
+
+## Discrete scale
+
+```{r}
+myPalette <- scales::hue_pal(c(0,360))
+myPalette(1)
+myPalette(2)
+myPalette(3)
+```
+
+```{r}
+scale_fill_
+scale_color_myPaletteDiscrete <- function(...){
+  discrete_scale(
+    "color",
+    scale_name="myDiscreteScale",
+    palette = myPalette,
+    ...
+  )
+}
+```
+
+
+```{r}
+colorspace::qualitative_hcl(n = 3, h = c(270, 120), c = 60, l = 80, register = "myPalette")
+
+```
+
+```{r}
+ggplotfdsl;fsf d
++
+  scale_color_discrete_qualitative(
+    palette="myPaltte"
+  )
+```
+
+```{r}
+colorspace::sequential_hcl(n = 5, h = 0, c = c(50, NA, NA), l = c(10, 74), power = 1.3, register = "myPalette2")
+
++ scale_color_discrete_sequential(
+  palette="myPalette2"
+)
+```
+
+
+```{r}
+colorspace::choose_palette(gui="shiny")
+```
+

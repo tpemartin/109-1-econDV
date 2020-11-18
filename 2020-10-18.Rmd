@@ -1,0 +1,146 @@
+
+```{r}
+# R在你電腦上找得到的字形
+font_files() #  查詢有什麼字形
+font_add("notoSansTC", # 把字形加到R系統裡，取名為notoSansTC family
+         regular="NotoSansTC-Regular.otf", # family裡的regular字體檔名
+         bold="NotoSansTC-Bold.otf") # family裡的bold字體檔名
+font_families() # 查看notoSansTC family有沒有成功加入
+```
+
+```{r}
+# Google提供的字形
+font_families_google() %>%
+  stringr::str_subset(regex("noto", ignore_case = T)) # 鎖定東方語系字形系列Noto
+font_add_google("Noto Sans TC") # 加入無襯字的Noto繁體中文
+font_families() # 查看notoSansTC family有沒有成功加入
+```
+
+```{r}
+library(showtext)
+showtext_auto()
+theme(
+  text=element_text(family = "Noto Sans TC")
+  ) %>%
+  theme_set()
+```
+
+```{r}
+sysfonts::font_add_google("Noto Sans TC") # 加入無襯字的Noto繁體中文
+
+showtext::showtext_auto(enable=TRUE) #啟用字體
+ggplot2::theme(
+  text=ggplot2::element_text(family="Noto Sans TC")
+) -> themeTextSetting
+ggplot2::theme_set(
+  themeTextSetting
+)
+
+```
+
+```{r}
+# <<canvas>>
+canvas <- ggplot()
+```
+
+  * ggplot(): initiator. 
+
+```{r}
+a <- c("A","A","C","B","B")
+afactor <- factor(
+  a
+)
+class(a)
+class(afactor)
+
+a
+afactor
+```
+
+
+```{r}
+class(canvas)
+canvas # deliver the result of its print method
+typeof(canvas)
+```
+
+
+```{r}
+load_plan_drake_graphing_basics(canvas)
+```
+
+
+```{r}
+str(canvas,1)
+```
+
+## data
+
+```{r}
+# <<big5bankInterestRates>>
+big5bankInterestRates = read_csv("https://www.cbc.gov.tw/public/data/OpenData/A13Rate.csv")
+```
+
+```{r}
+big5bankInterestRates
+```
+
+```{r}
+# <<subsetDataTWbank>>
+```
+
+```{r}
+ggline
+```
+
+```{r}
+ggLinePoint
+```
+
+```{r}
+# <<ggline3M>>
+ggline3M
+# <<ggline1Y>>
+ggline1Y
+# <<ggline2Y3Y>>
+ggline2Y3Y
+```
+```{r}
+View(ggline2Y3Y)
+```
+
+```{r}
+View(ggline)
+```
+
+```{r}
+View(ggline2Y3Y_2)
+ggline2Y3Y_2
+```
+
+```{r}
+ggTwbInterestRates
+```
+
+
+```{r}
+ggTwbInterestRates_bw= {
+  ggTwbInterestRates +
+    theme_bw()
+}
+```
+
+```{r}
+ggTwbInterestRates_bw
+
+```
+
+```{r}
+
+econDV::svgOpen(
+  file.path(
+    root(), "img/ggTwbInterestRates.svg"
+  )
+)
+```
+
