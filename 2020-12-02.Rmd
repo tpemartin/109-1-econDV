@@ -1,0 +1,247 @@
+---
+title: "1202"
+drake_cache: ".dv1202"
+output: html_document
+params:
+  key: "公Aa-Ⅳ-1" 
+  memberNames: ["Mary", "cook"]
+  memberIds: ["410888292", "410772938"] 
+  imgPreName: "taiwanEconomicsGrowth.svg" 
+  imgPostName: "" 
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+  * 圖片一定要有Title, subtitle, 及資料來源。
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+```
+#
+
+```{r}
+load_plan_drake_statfunction(data_chosenLevels_rev)
+data_chosenLevels
+```
+
+```{r}
+ggplot(
+  data=data_chosenLevels_rev
+)+
+  geom_col(
+    aes(
+      x=`鄉(鎮、市、區)別`,
+      y=`(3)
+ 蔡英文
+ 賴清德`
+    ),
+   fill="#5E9A43", width = .9
+  )+
+  scale_y_continuous(
+    expand=expansion()
+  ) +
+  theme(
+    # panel.background = element_blank()
+    panel.background = element_rect(fill="#feffe4", color="white"),
+    axis.line.y = element_blank(),
+    # axis.ticks.y =element_blank(),
+    panel.grid.major.y =
+      element_line(
+        colour = "#b8c7d0",
+        linetype="solid"
+      ),
+    panel.grid.major.x =
+      element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x = 
+      element_text(
+        size
+      )
+  ) -> plt0
+plt0
+ggsave("plt0.svg", plt0, width=5, height=3)
+```
+
+```{r}
+data_chosenLevels_rev$`鄉(鎮、市、區)別` %>% head()
+```
+
+
+```{r}
+plt_xVertical_yGrounded = {
+  plt_election_xVeritical_green_chosenLevels_rev +
+  scale_y_continuous(
+    expand = expansion(mult = 0, add = 0) # since it's default, expansion() will do
+  )
+}
+```
+
+#### method 1
+
+```{r}
+scale_method1 <- scale_y_continuous(
+    expand=expansion()
+  ) 
+
+
+theme_method1 <- theme(
+    # panel.background = element_blank()
+    panel.background = element_rect(fill="#feffe4", color="white"),
+    axis.line.y = element_blank(),
+    # axis.ticks.y =element_blank(),
+    panel.grid.major.y =
+      element_line(
+        colour = "#b8c7d0",
+        linetype="solid"
+      ),
+    panel.grid.major.x =
+      element_blank(),
+    axis.ticks = element_blank()
+  )
+
+scale_method1 + theme_method1
+```
+
+```{r}
+load_plan_drake_statfunction(plt_election_xVeritical_green_chosenLevels_rev) 
+plt_election_xVeritical_green_chosenLevels_rev +
+  scale_method1 +
+  theme_method1
+```
+
+```{r}
+plt_election_xVeritical_green_chosenLevels_rev +
+  economistTheme$scale+
+  economistTheme$theme
+```
+
+
+```{r}
+economistTheme <- 
+  list(
+    scale=scale_method1,
+    theme=theme_method1
+  )
+```
+
+```{r}
+test <- function(x, ... ){
+  argList <- list(...)
+  # browser()
+  if(length(argList)!=0){
+    paste0(argList$outputMessage, x, " is \n") -> printMessage
+    cat(printMessage)
+  }
+  y=8^x
+  return(y)
+}
+```
+
+```{r}
+test(2)
+test(2, outputMessage="Number 8 to the power")
+```
+```{r}
+test(method(12))
+```
+
+## method2
+
+```{r}
+plt_election_xVeritical_green_chosenLevels_rev +
+  economistTheme$scale()+
+  economistTheme$theme(panel.background=element_rect(fill="blue"))
+```
+
+```{r}
+plt_election_xVeritical_green_chosenLevels_rev +
+  economistTheme$scale()+
+  economistTheme$theme()
+```
+
+  * scale element value is a function.
+  
+  * theme element value is a function
+  
+```{r}
+economistTheme <- list(
+  scale=function(...){
+    scale_y_continuous(
+    expand=expansion(),
+    ...
+    ) 
+  },
+  theme0=function(...){
+    theme(
+    # panel.background = element_blank()
+    panel.background = element_rect(fill="#feffe4", color="white"),
+    axis.line.y = element_blank(),
+    # axis.ticks.y =element_blank(),
+    panel.grid.major.y =
+      element_line(
+        colour = "#b8c7d0",
+        linetype="solid"
+      ),
+    panel.grid.major.x =
+      element_blank(),
+    axis.ticks = element_blank(),
+    ...
+  )
+    
+  }
+)
+
+```
+
+```{r}
+plt_election_xVeritical_green_chosenLevels_rev +
+  economistTheme$scale()+
+  economistTheme$theme()
+```
+```{r}
+plt_election_xVeritical_green_chosenLevels_rev +
+  economistTheme$scale()+
+  economistTheme$theme(panel.background=element_rect(fill="blue"))
+```
+
+
+```{r}
+e0<- element_rect(fill="blue")
+economistTheme$theme0(panel.background=e0)
+```
+
+```{r}
+theme(panel.background = element_rect(fill="blue"))
+```
+
+```{r}
+theme(panel.background=element_rect(fill="blue"))
+```
+

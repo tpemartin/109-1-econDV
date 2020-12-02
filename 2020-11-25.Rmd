@@ -1,0 +1,219 @@
+---
+title: "台灣景氣循環"
+drake_cache: ".chart1_sunny"
+output: html_document
+params:
+  key: "公Aa-Ⅳ-1" 
+  memberNames: ["Mary", "cook"]
+  memberIds: ["410888292", "410772938"] 
+  imgPreName: "taiwanEconomicsGrowth.svg" 
+  imgPostName: "" 
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+  * 圖片一定要有Title, subtitle, 及資料來源。
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+```
+
+
+```{r}
+set.seed(2020)
+df_bar <- 
+  data.frame(
+    x=sample(LETTERS[1:3], 200, replace = T)
+  )
+table(df_bar$x)
+
+head(df_bar)
+```
+
+```{r}
+ggplot(df_bar)+
+  geom_bar(
+    aes(x=x)
+  ) +
+  scale_x_discrete(bre)
+```
+
+```{r}
+df_col <- 
+  data.frame(
+    x=c("A", "B", "C"),
+    y=c(73, 61, 66)
+  )
+ggplot(df_col)+
+  geom_col(
+    aes(y=x, x=y)
+  )+
+  scale_y_discrete()
+```
+
+
+```{r}
+set.seed(2020)
+df_hist <- data.frame(
+  x = rnorm(100)
+)
+ggplot(df_hist)+
+  geom_histogram(
+    aes(x=x), bins = 30
+  )
+```
+
+```{r}
+ggplot(df_hist)+
+  geom_density(
+    aes(x=x)
+  )
+```
+
+## election 2020
+
+```{r}
+election2020 <- jsonlite::fromJSON(
+  "https://www.dropbox.com/s/a3torx0p41hheb6/presidentElection2020.json?dl=1"
+)
+canvas = ggplot(data=election2020) 
+```
+
+```{r plt_election01}
+plt_election01 = {
+  canvas + 
+  geom_col(
+    aes(
+      x=`鄉(鎮、市、區)別`, 
+      y=`(3)
+ 蔡英文
+ 賴清德` ), fill="#5E9A43"
+  )
+}
+```
+
+```{r}
+plt_election01
+```
+
+```{r plt_election01_flip}
+plt_election01_flip = {
+  canvas + 
+  geom_col(
+    aes(
+      y=`鄉(鎮、市、區)別`, 
+      x=`(3)
+ 蔡英文
+ 賴清德`)
+  )
+}
+```
+
+```{r}
+plt_election01_flip
+```
+
+
+```{r plt_election_turnX270}
+plt_election_turnX270 = {
+  plt_election01 +
+    theme(
+      axis.text.x = 
+        element_text(angle=270, size=unit(10, "pt"))
+      # angle = 90, "區峽三"，angle = -90 (要寫360-90) 才"三峽區"
+      )+
+      labs(
+        title="2020台灣總統大選",
+        subtitle = "民進黨候選人得票率（單位：%）",
+        caption="中央選舉委員會",
+        y="", x=NULL
+      )
+}
+```
+
+
+```{r}
+plt_election_turnX270
+```
+
+```{r}
+plt_election_xVeritical = {
+  plt_election01 %+% 
+    {
+      # 行政區名每個字換行
+      plt_election01$data$`鄉(鎮、市、區)別` %>%
+        stringr::str_split("") %>%
+        map_chr(paste0, collapse="\n") ->
+        plt_election01$data$`鄉(鎮、市、區)別`
+      
+      plt_election01$data # { }最後一行必需是個data frame
+    } +
+      labs(
+        title="2020台灣總統大選",
+        subtitle = "民進黨候選人得票率（單位：%）",
+        caption="中央選舉委員會",
+        y=NULL, x=NULL
+      )
+}
+```
+
+```{r}
+cat('三峽區')
+
+```
+
+```{r}
+cat('三\n峽\n區')
+```
+hsl(106, 56.3%, 37.6%)
+
+```{r}
+colorspace::choose_color(
+)
+```
+#8FA176
+
+```{r}
+plt_election01[["layers"]][[1]][["aes_params"]][["fill"]] <- "#2a4396"
+```
+
+```{r}
+plt_election01 +
+  scale_y_continuous(
+    expand= expansion(mult=0, add=0)
+  )
+```
+
+
+```{r}
+plt + myOwnDesign()
+```
+
+
