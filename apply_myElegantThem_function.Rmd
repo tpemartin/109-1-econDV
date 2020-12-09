@@ -1,0 +1,118 @@
+---
+title: "my elegant theme"
+drake_cache: ".chart1_sunny"
+output: html_document
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+  * 圖片一定要有Title, subtitle, 及資料來源。
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+```
+
+## apply_myElegantTheme
+
+  * a theme that applies background color change.
+  
+  * if geom is line, then line color is also changed. 
+  
+```{r}
+apply_myElegantTheme <- function(ggObject){
+
+  for (.x in seq_along(ggObject[["layers"]])) {
+    if (is(ggObject[["layers"]][[.x]][["geom"]], "GeomLine")
+    ) {
+      ggObject[["layers"]][[.x]][["aes_params"]][["colour"]] <- "#aa5858" # 今天忘了這裡也要改色
+      ggObject[["layers"]][[.x]][["geom_params"]][["colour"]] <- "#aa5858"
+    }
+  }
+  myTheme <- {
+    theme(
+      panel.background = element_rect(
+        fill = "#e1cdb5"
+      )
+    )
+  }
+
+  ggObject +
+    myTheme
+} 
+```
+
+### Test 1: geom_point
+
+```{r testPlot_point}
+testPlot_point = {
+    testdata <- 
+      data.frame(
+        x=1:100,
+        y=1:100
+      )
+    ggplot(testdata) +
+      geom_point(
+        aes(x=x, y=y)
+      )
+}
+```
+
+```{r}
+testPlot_point
+```
+
+
+```{r}
+testPlot_point %>% apply_myElegantTheme()
+```
+### Test2: geom_line
+
+```{r testPlot_line}
+testPlot_line = {
+    testdata <- 
+      data.frame(
+        x=1:100,
+        y=1:100
+      )
+    ggplot(testdata) +
+      geom_line(
+        aes(x=x, y=y), size=1
+      )
+}
+```
+
+```{r}
+testPlot_line
+```
+
+```{r}
+testPlot_line %>% apply_myElegantTheme()
+```
+
