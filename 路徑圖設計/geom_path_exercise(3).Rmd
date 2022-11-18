@@ -1,0 +1,115 @@
+---
+title: "台灣景氣循環：經濟成長率 v.s. 失業率"
+drake_cache: ".geom_path"
+output: html_document
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+  * 圖片一定要有Title, subtitle, 及資料來源。
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+library(ggrepel)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+
+jsonlite::fromJSON("https://www.dropbox.com/s/q7h63r8p497q7xz/df_gdp_unemployment4label.json?dl=1") -> df_gdp_unemployment4label
+jsonlite::fromJSON("https://www.dropbox.com/s/dukzr6w2wj5vzfv/df_gdp_unemployment4plt.json?dl=1") -> df_gdp_unemployment4plt
+DF=data.frame(
+  x=df_gdp_unemployment4label$D4_urate,
+  y=df_gdp_unemployment4label$growthRate
+)
+```
+
+
+```{r plt_bcUnemployment}
+plt_bcUnemployment = {
+  ggplot(DF)+
+    geom_smooth(
+      aes(
+        x=x, y=y,
+        
+      ),colour="#16235A",method="lm", alpha=0.1, size=1
+    )+
+    geom_point(
+      mapping=aes(
+        x=x, y=y,
+      ),colour="#132226", size=1
+    )+
+    geom_text_repel(
+      data=df_gdp_unemployment4label,
+      aes(
+        x=D4_urate, y=growthRate,
+        label=label
+      ),colour = "#040C0E", size=3, alpha=0.3
+    )+
+    labs(
+      title="1982年第1季-2020年第3季 前一季經濟成長率與失業率變化的相關性",
+      subtitle = "年份標示點為該年1月，失業率變化是當季失業率減去去年同季失業率\n單位：%",
+      caption="資料來源: 行政院主計總處",
+      x="失業率變化",
+      y="前一季經濟成長率"
+    ) -> plt_bcUnemployment
+  
+}
+```
+
+```{r}
+ggtheme={
+  plt_bcUnemployment+theme(
+  panel.background = element_rect(fill = "#A4978E",
+                                colour = "white",
+                                size = 11, linetype = "solid"),
+  panel.grid.major = element_line(size = 0.25, linetype = 'solid',
+                                colour = "white"), 
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                colour = "white")
+  )+ theme(plot.background = element_rect(fill = "#BE9063"))
+   +theme(panel.border = element_blank(),
+          axis.line = element_line(size = 0.25, linetype = "solid",
+                                   colour = "grey"))
+          
+}
+```
+
+```{r}
+plt_bcUnemployment
+
+```
+```{r}
+ggtheme
+```
+
+```{r}
+ggsave(ggtheme,
+         file="img/plt_bcUnemployment.svg",
+         width=8, height=5)  
+  plt_bcUnemployment
+```
+

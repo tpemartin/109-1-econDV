@@ -1,0 +1,181 @@
+---
+title: "國內生產毛額GDP走勢圖(1951-2019)"
+drake_cache: ".week1_graphs" # 請取一個你認為幾乎不會有人和你一樣的cache名稱
+output: html_document
+params:
+  key: "公Bq-Ⅴ-3" # 課綱編號，多個可用 ["key1", "key2"]
+  memberNames: ["馮紀維"] # 組員姓名
+  memberIds: ["410773131"] # 學號
+  imgPreName: "trend_of_GDP" # ggsave時的檔名
+  imgPostName: "" # svg後製時的檔名
+editor_options: 
+  chunk_output_type: console
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+  * 上傳時請交你的「Rmd檔」及「ggsave的SVG檔」，若有後製也請交上後製的SVG。由一個組員上傳到google classroom的作業繳交處。（通常是這次作業訊息公告的位置）
+  
+  * 作圖資料：
+    * 若資料本身是公開資料「且」可經網址形式直接寫在程式中下載則無需另附資料。否則
+    * 將資料上傳到本課程的分享google drive folder: <https://drive.google.com/drive/folders/19_B9LnjR4g9M8VPmbUuf4UjXXxC_JKhm?usp=sharing> 讓全班都可以看得到你的檔案 （注意，這和作業邀交處是不同的。）
+    * 上傳後，請點你檔案按滑鼠右鍵，選「get link」得到你資料檔的分享連結。
+    * 程式要引入此資料處，請依照下面datadownload code chunk去引入資料。
+    
+總結：
+
+  * 上傳到Google classroom作業繳交處：Rmd, SVG
+  
+  * 上傳到分享Google Drive Folder: 資料檔 （若公開資料且程式可下載則無需上傳）
+    
+***
+  
+  * params裡的訊息若無後製SVG可不寫imgPostName，其他都要填。
+  
+  * 圖片一定要有Title, subtitle, 及資料來源。
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+font_families_google() %>%
+  stringr::str_subset(regex("noto", ignore_case = T)) 
+font_add_google("Noto Sans TC") 
+```
+
+
+```{r makecondition}
+library(readr)
+library(ggplot2)
+library(drake)
+library(rmd2drake)
+library(dplyr)
+library(showtext)
+library(stringr)
+library(jsonlite)
+library(lubridate)
+
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+```
+
+
+## data
+
+```{r datadownload}
+income <- fromJSON("https://quality.data.gov.tw/dq_download_json.php?nid=44218&md5_url=5108938196a413ee42cca40b2e599084")
+```
+
+
+## graph
+
+```{r myggplot}
+myggplot = {
+  canvas ={
+    ggplot()
+  }
+}
+```
+
+
+https://github.com/chiwei82/109-1-econDV/blob/ae294a02a8664f87326f50be5c876c2b14948851/weekly_chart/week1.Rmd#L90
+
+should be
+
+```{r subset_of_income}
+subset_of_income <- {
+  income$Item_VALUE <- as.integer(income$Item_VALUE)
+
+  pick <- income$Item == "國內生產毛額GDP(名目值，百萬元)" & income$TYPE == "原始值"
+
+  Item_VALUE <- income$Item_VALUE[pick]
+
+  TIME_PERIOD <- income$TIME_PERIOD[pick]
+
+  subset_of_income <- data.frame(
+    `年` = TIME_PERIOD,
+    `國內生產毛額GDP(名目值，百萬元)` = Item_VALUE
+  )
+  subset_of_income
+}
+
+```
+
+```{r}
+subset_of_income %>% names()
+```
+
+
+```{r}
+ggplot(
+  data=subset_of_income
+) +
+  geom_line(
+    aes(
+      x= as.numeric(年), y = `國內生產毛額GDP.名目值.百萬元.`
+    )
+  )
+
+```
+
+
+```{r ggpoint}
+ggpoint <- {
+  ggplot() +
+    geom_line(
+      mapping =  aes(x = `年`, y = `國內生產毛額GDP.名目值.百萬元.`),
+      subset_of_income %>%
+        mutate(
+          國內生產毛額GDP.名目值.百萬元. = 
+            as.double(國內生產毛額GDP.名目值.百萬元.)
+        )
+    )
+}
+```
+
+```{r}
+subset_of_income$國內生產毛額GDP.名目值.百萬元. %>% map(class)
+```
+
+```{r ggTWGDPTrend}
+ggTWGDPTrend= {
+  ggpoint +
+    labs(
+      title="國內生產毛額GDP走勢圖(1951-2019)",
+      subtitle="年,國內生產毛額GDP(名目值，百萬元)",
+      caption="資料出處: 政府開放資料平台https://data.gov.tw/dataset/10359",
+      y="",
+      x=""
+    )+theme_classic()
+}
+```
+
+```{r}
+ggTWGDPTrend
+```
+
+## export
+
+```{r save_ggplot}
+save_ggplot = {
+
+  ggsave(
+    plot=ggTWGDPTrend,
+    filename=file.path(imageFolder, "ggTWGDPTrend.svg"),
+    width = 8,
+    height = 5
+  )
+}
+```
+
+  * myPlot.svg及本Rmd檔一起上傳作業繳交處

@@ -1,0 +1,293 @@
+---
+title: "aesthetics2"
+drake_cache: ".aesthetics2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, eval=F)
+library(knitr)
+```
+
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(econDV)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> root
+source(
+  file.path(root(),"drake_plans/plan_drake_aesthetics1.R")
+)
+load_plan_drake_aesthetics1(ggplotBase)
+load_plan_drake_aesthetics1(ggplotNewLegend)
+```
+
+## breaks/labels setup
+
+```{r}
+ggplotBase
+```
+
+```{r major_breaks}
+major_breaks= {
+  ggplotBase$data$西元年月 %>% unique() %>% sort() -> possibleValues
+  starting <- possibleValues[[1]]
+  ending <- possibleValues[[length(possibleValues)]]
+  # major breaks
+  major_breaks = {
+      possibleValues %>%
+        month() %>%
+        {.==1} -> pickMajorBreaks
+    
+      # 留下1月
+      major_breaks <- possibleValues[pickMajorBreaks]
+      
+      # 留下0/5 尾數年份
+      major_breaks %>% year() %% 5 %>%
+        {.==0} -> pick05endingYears
+      major_breaks <- major_breaks[pick05endingYears]
+      
+      # 增加starting ending
+      major_breaks <- c(starting, major_breaks, ending) %>% unique()
+      
+      major_breaks
+  }
+  major_breaks  
+}
+```
+
+```{r}
+ggplotBase +
+  scale_x_date(
+    breaks=major_breaks
+  )
+```
+
+
+```{r}
+ggplotBase +
+  scale_x_date(
+    breaks=major_breaks
+  )+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+```
+
+
+```{r labels}
+labels = {
+  major_breaks %>% year() -> breakYears
+  major_breaks %>% month() -> breakMonths
+  paste0(breakYears,"/",breakMonths)
+}
+
+```
+
+```{r}
+major_breaks
+```
+
+
+```{r}
+labels
+```
+
+```{r}
+ggplotNewLegend
+```
+
+```{r plot_breaksEditted}
+plot_breaksEditted = {
+  ggplotNewLegend +
+    scale_x_date(
+      breaks = major_breaks
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+}
+
+```
+
+```{r}
+plot_breaksEditted
+```
+
+```{r}
+scale_x_date(
+      breaks = major_breaks, 
+      labels = labels
+)
+```
+
+```{r}
+myScale_x_date <- scale_x_date()
+```
+
+
+```{r plot_breaksLabelsEditted}
+plot_breaksLabelsEditted = {
+  ggplotNewLegend +
+    scale_x_date(
+      breaks = major_breaks, 
+      labels = labels
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+}
+
+```
+
+```{r}
+plot_breaksLabelsEditted
+```
+
+## stand-alone targets 
+
+### scale layer
+
+```{r ggplot0}
+ggplot0 = {
+  ggplotNewLegend +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )  
+}
+```
+
+```{r sale1}
+scale1 =
+  scale_x_date(
+      breaks = major_breaks
+    ) 
+```
+
+```{r sale2}
+scale2 =
+  scale_x_date(
+      breaks = major_breaks, 
+      labels = labels
+    ) 
+```
+
+```{r ggplot1_1}
+ggplot1_1 = {
+  ggplot0 +
+    scale1
+}
+```
+
+```{r}
+ggplot1_1
+```
+
+```{r ggplot1_2}
+ggplot1_2 = {
+  ggplot0 +
+    scale2
+}
+```
+
+```{r}
+ggplot1_2
+```
+
+### geom target
+
+```{r}
+plot_breaksLabelsEditted
+```
+
+
+#### 事件陰影 
+
+  * 2008 financial crisis timeline: <https://www.thebalance.com/2008-financial-crisis-timeline-3305540>
+  
+```{r financialCrisis}
+financialCrisis = data.frame(
+  title=c("2008 Financial crisis"),
+  start=ymd(c("2008-01-01")),
+  end=ymd(c("2008-12-01"))
+)
+```
+
+xmax, xmin, ymax, ymin, alpha, color, fill, linetype, size
+
+```{r ggplotWithEvent}
+ggplotWithEvent = { # <drake_aes2>
+  plot_breaksLabelsEditted + # <drake_aes2>
+    geom_rect(
+      mapping = aes(
+        xmin = start, xmax = end
+      ),
+      data = financialCrisis, # <drake_aes2>
+      ymax = Inf, ymin = -Inf # 定值的mapping放在aes()外
+    )
+}
+```
+
+```{r}
+ggplotWithEvent
+```
+
+
+```{r ggplotWithEventAlpha}
+ggplotWithEventAlpha = { # <drake_aes2>
+  plot_breaksLabelsEditted + # <drake_aes2>
+    geom_rect(
+      mapping = aes(
+        xmin = start, xmax = end
+      ),
+      data = financialCrisis, # <drake_aes2>
+      alpha= 0.3, # 透明度調整[0,1]間
+      ymax = Inf, ymin = -Inf # 定值的mapping放在aes()外
+    )
+}
+```
+
+
+```{r financialCrisisShades}
+financialCrisisShades = {
+  geom_rect(
+      mapping = aes(
+        xmin = start, xmax = end
+      ),
+      data = financialCrisis, # <drake_aes2>
+      alpha= 0.3, # 透明度調整[0,1]間
+      ymax = Inf, ymin = -Inf # 定值的mapping放在aes()外
+    )
+}
+```
+
+
+```{r}
+plot_breaksLabelsEditted +
+  financialCrisisShades
+```
+
+
+```{r}
+ggplotWithEventAlpha
+```
+
+
+### legend position
+
+```{r ggplotLegendTop}
+ggplotLegendTop = { # <drake_aes2>
+  ggplotWithEventAlpha + # <drake_aes2>
+    theme(
+      legend.position = "top"
+    )
+}
+```
+
+```{r}
+ggplotLegendTop
+```
+

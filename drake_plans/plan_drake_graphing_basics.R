@@ -3,6 +3,7 @@ library(ggplot2)
 library(drake)
 library(rmd2drake)
 library(dplyr)
+library(stringr)
 library(showtext)
 showtext_auto()
 theme(
@@ -31,7 +32,8 @@ subsetDataTWbank = {
        西元年月=lubridate::ymd(年月日)
     )  %>%
     select(
-      "銀行", "西元年月", matches("定存利率-([一三六]個月|[一二三]年期)-固定")
+      "銀行", "西元年月",
+      matches("定存利率-([一三六]個月|[一二三]年期)-固定")
     ) %>%
     filter(
       銀行=="臺灣銀行"
@@ -52,13 +54,13 @@ ggline = {
     )
 },
 
-# >> ggpoint--------------
-ggpoint = {
+# >> ggLinePoint--------------
+ggLinePoint={
   ggline +
-    geom_point(
-      aes(x = 西元年月, y = `定存利率-一個月-固定`),
-      subsetDataTWbank
-    )
+  geom_point(
+    mapping=aes(x=西元年月,y=`定存利率-一個月-固定`), 
+    subsetDataTWbank  
+  )
 },
 
 # >> ggline3M--------------
@@ -161,6 +163,7 @@ library(ggplot2)
 library(drake)
 library(rmd2drake)
 library(dplyr)
+library(stringr)
 library(showtext)
 showtext_auto()
 theme(
@@ -183,6 +186,7 @@ library(ggplot2)
 library(drake)
 library(rmd2drake)
 library(dplyr)
+library(stringr)
 library(showtext)
 showtext_auto()
 theme(

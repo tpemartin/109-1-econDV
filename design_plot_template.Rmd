@@ -1,0 +1,8 @@
+---
+title: "the steps of graph template design"
+labels: ["visualization"]
+---
+
+  1. determine your plot output aspect ratio. (asp.ratio)
+  
+  2. Given width or height, determine **font size**, font family on border line. 

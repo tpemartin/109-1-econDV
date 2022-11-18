@@ -1,0 +1,181 @@
+---
+title: "aesthetics1"
+drake_cache: ".aesthetics1"
+output: output_format
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(econDV)
+library(drake)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> root
+source(
+  file.path(root(),"drake_plans/plan_drake_graphing_basics.R")
+)
+load_plan_drake_graphing_basics(ggline2Y3Y)
+load_plan_drake_graphing_basics(subsetDataTWbank)
+```
+
+```{r}
+ggline2Y3Y
+```
+
+## Use color mapping
+
+```{r longData, drake=F}
+longData <- {
+  subsetDataTWbank %>%
+    pivot_longer(
+      cols = 3:8, # across(.cols=... )都可以用
+      names_to = "定存種類",
+      values_to = "利率"
+    )
+}
+```
+
+```{r canvasWithData}
+canvasWithData = {
+  ggplot(data=longData)
+}
+```
+
+```{r}
+longData$西元年月
+```
+
+
+```{r gglineWithColorAes}
+gglineWithColorAes ={
+  canvasWithData +
+    geom_line(
+      aes(
+        x=西元年月, y=利率, color=定存種類
+      )
+    )
+}
+```
+
+```{r gglineWithColorAes, drake=F}
+gglineWithColorAes ={
+  canvasWithData +
+    geom_line(
+      aes(
+        x=西元年月, y=利率, linetype=定存種類
+      )
+    )
+}
+```
+
+```{r}
+gglineWithColorAes
+```
+
+```{r ggplotBase}
+ggplotBase= {
+  gglineWithColorAes+
+    labs(
+      title="臺灣銀行不同期限定存利率",
+      subtitle="固定利率，單位：% 年率",
+      caption="資料出處: 政府開放資料平台https://data.gov.tw/dataset/10359",
+      y="",
+      x=""
+    )+theme_classic()
+}
+```
+
+```{r}
+ggplotBase
+```
+
+## 類別資料
+
+```{r}
+longData$定存種類 %>% factor() %>% levels()
+```
+
+  * 定存種類排法不對： set it as factor with proper levels order.
+  
+```{r longData, drake=T}
+longData = {
+  
+  longData <- {
+  subsetDataTWbank %>%
+    pivot_longer(
+      cols = 3:8, # across(.cols=... )都可以用
+      names_to = "定存種類",
+      values_to = "利率"
+    )
+  }
+  
+  maturity <- c("一個月", "三個月", "六個月",
+                "一年期", "二年期", "三年期")
+  newLevels <- paste0("定存利率-",maturity,"-固定")
+  longData %>%
+    mutate(
+      定存種類=factor(定存種類, 
+                      levels=newLevels)
+    ) -> longData2
+  
+  longData2$定存種類 %>% levels()
+  
+  longData2
+}
+```
+
+## scale on x
+
+```{r ggplotSubperiod}
+ggplotSubperiod = {
+  ggplotBase +
+  scale_x_date(
+    limits = c(ymd("2005-01-01"), ymd("2015-12-01"))
+  )
+}
+```
+
+```{r}
+ggplotBase
+```
+
+
+```{r}
+ggplotSubperiod
+```
+
+## scale on color
+
+```{r ggplotNewLegend}
+ggplotNewLegend = {
+  longData$定存種類 %>% levels() -> dataLevels
+  dataLevels %>% stringr::str_extract("(?<=-)[:graph:]+(?=-)") -> dataLevelLabels
+  ggplotSubperiod +
+    scale_color_discrete(
+      breaks= dataLevels,
+      labels= dataLevelLabels,
+      name="定存期限"
+    )
+}
+```
+
+
+```{r}
+ggplotNewLegend
+```
+
+```{r}
+dataLevels
+```
+```{r}
+dataLevelLabels
+```
+

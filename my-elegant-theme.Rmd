@@ -1,0 +1,275 @@
+---
+title: "my elegant theme"
+drake_cache: ".chart1_sunny"
+output: html_document
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+  * 圖片一定要有Title, subtitle, 及資料來源。
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+```
+
+# 6.4.2.1
+
+```{r testPlot}
+testPlot = {
+    testdata <- 
+      data.frame(
+        x=1:100,
+        y=1:100,
+        z=sample(1:100,100, replace=T)
+      )
+    ggplot(testdata) +
+      geom_blank(
+        aes(x=x, y=y)
+      )
+}
+```
+
+```{r testPlot_line}
+testPlot_line = {
+    testdata <- 
+      data.frame(
+        x=1:100,
+        y=1:100
+      )
+    ggplot(testdata) +
+      geom_line(
+        aes(x=x, y=y)
+      )
+}
+```
+
+```{r testPlot_liner}
+testPlot_liner = {
+    testdata <- 
+      data.frame(
+        x=1:100,
+        y=1:100
+      )
+    ggplot(testdata) +
+      geom_line(
+        aes(x=x, y=y), color="red"
+      )
+}
+```
+
+```{r}
+testPlot_liner$layers[[1]]$
+```
+
+
+```{r}
+all.equal(testPlot_line, testPlot_liner)
+```
+```{r}
+testPlot_line$layers[[1]]
+class(testPlot_liner$layers[[1]])
+methods(class="ggproto")
+```
+
+
+```{r}
+names(testPlot_liner$layers[[1]])
+```
+
+
+
+```{r}
+debug(apply_myElegantTheme)
+apply_myElegantTheme(testPlot_line)
+```
+
+
+
+```{r}
+all.equal(
+  testPlot_point,
+  testPlot_line
+)
+```
+
+```{r}
+testPlot
+```
+
+
+
+# Background
+
+  * #e1cdb5
+  
+# Line 
+
+  * #aa5858
+  
+```{r myTheme}
+myTheme = {
+  theme(
+    panel.background = element_rect(
+      fill = "#e1cdb5"
+    )
+  )
+}
+```
+
+
+```{r ggVoid}
+ggVoid = {
+  testPlot+
+  geom_line(
+    aes(x=x, y=z), 
+    # color='#aa5858',
+    size=1
+  )+
+  theme_void()+
+  myTheme
+}
+
+ggVoid
+```
+
+
+```{r ggTest}
+ggTest = {
+  testPlot+
+  geom_line(
+    aes(x=x, y=z), 
+    # color='#aa5858',
+    size=1
+  )+
+  theme_test()+
+  myTheme
+}
+
+ggTest
+```
+
+```{r ggObject}
+ggObject = {
+  testPlot+
+    geom_line(
+      aes(x=x, y=z), 
+      size=1,
+      color="red"
+    )
+}
+ggObject
+```
+
+```{r}
+ggObject <- testPlot_line
+ggObject 
+```
+
+```{r}
+ggObject$layers[[1]]$geom_params$colour
+
+```
+## apply_myElegantTheme
+
+  * a theme that applies background color change.
+  
+  * if geom is line, then line color is also changed. 
+  
+```{r}
+apply_myElegantTheme <- function(ggObject){
+
+  for (.x in seq_along(ggObject[["layers"]])) {
+    if (is(ggObject[["layers"]][[.x]][["geom"]], "GeomLine")
+    ) {
+      ggObject[["layers"]][[.x]][["aes_params"]][["colour"]] <- "#aa5858" # 今天忘了這裡也要改色
+      ggObject[["layers"]][[.x]][["geom_params"]][["colour"]] <- "#aa5858"
+    }
+  }
+  myTheme <- {
+    theme(
+      panel.background = element_rect(
+        fill = "#e1cdb5"
+      )
+    )
+  }
+
+  ggObject +
+    myTheme
+} 
+```
+
+### Test 1: geom_point
+
+```{r testPlot_point}
+testPlot_point = {
+    testdata <- 
+      data.frame(
+        x=1:100,
+        y=1:100
+      )
+    ggplot(testdata) +
+      geom_point(
+        aes(x=x, y=y)
+      )
+}
+```
+
+```{r}
+testPlot_point
+```
+
+
+```{r}
+testPlot_point %>% apply_myElegantTheme()
+```
+### Test2: geom_line
+
+```{r testPlot_line}
+testPlot_line = {
+    testdata <- 
+      data.frame(
+        x=1:100,
+        y=1:100
+      )
+    ggplot(testdata) +
+      geom_line(
+        aes(x=x, y=y), size=1
+      )
+}
+```
+
+```{r}
+testPlot_line
+```
+
+```{r}
+testPlot_line %>% apply_myElegantTheme()
+```
+

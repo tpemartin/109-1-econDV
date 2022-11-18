@@ -92,6 +92,7 @@ testPlot_point
 ```{r}
 testPlot_point %>% apply_myElegantTheme()
 ```
+
 ### Test2: geom_line
 
 ```{r testPlot_line}
@@ -109,8 +110,82 @@ testPlot_line = {
 ```
 
 ```{r}
+testPlot_line2 = {
+    testdata <- 
+      data.frame(
+        x=1:100,
+        y=1:100
+      )
+    ggplot(testdata) +
+      geom_line(
+        aes(x=x, y=y), size=1, color="#aa5858"
+      )
+}
+```
+
+```{r}
 testPlot_line
 ```
+
+```{r}
+testPlot_line2
+```
+## econDV
+
+```{r}
+myComparison <- expression(all.equal(testPlot_line,testPlot_line2))
+myComparison
+class(myComparison)
+eval(myComparison)
+```
+
+```{r}
+a <- 5
+a
+expression(a)
+```
+
+
+```{r}
+testfun <- function(x) 2*x
+obj1 <- expression(testfun)
+obj2 <- expression(testfun(2))
+class(obj1)
+class(obj2)
+obj3 <- call("testfun",2)
+class(obj3)
+
+df %>%
+  filter(
+    x1 >10
+  ) %>%
+  select(x1)
+```
+
+
+```{r}
+testPlot_line$layers[[1]][[1]]
+```
+
+
+```{r}
+get_discrepancyExtractionIndex(testPlot_line, testPlot_line2)
+```
+
+```{r}
+list_discrepancy <- {
+  get_discrepancyExtractionIndex(testPlot_line, testPlot_line2)
+}
+get_allDiscrepancyExpressionsInText(list_discrepancy, testPlot_line)
+get_allDiscrepancyExpressions(list_discrepancy, testPlot_line)  
+get_allDiscrepancyExpressions(list_discrepancy, testPlot_line) -> list_exprs
+get_allDiscrepancyExpressionsInText(list_discrepancy, testPlot_line) -> chr_exprs
+show_values(list_exprs)
+show_values(chr_exprs)
+```
+
+
+
 
 ```{r}
 testPlot_line %>% apply_myElegantTheme()

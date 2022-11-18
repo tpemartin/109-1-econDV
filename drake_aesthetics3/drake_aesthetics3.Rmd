@@ -1,0 +1,159 @@
+---
+title: "Drake plan generator"
+output: html_document
+---
+
+Run this chunk when you finish your plan
+`drake=F` excludes the chunk being included in the drake plan
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+
+```
+
+## makecondition
+
+list necessary steps before you make the plan. 
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(econDV)
+library(scales) # show_col()螢幕立即顯示顏色
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> root
+```
+
+
+### 顏色模型
+
+光的三原色為R(紅)G(綠)B(藍)，三種光原色一起發光就會產生俗稱的白光。事實上光是沒有顏色的。而人類眼睛所看物體的顏色，是光線照在物體上所反射的波長被眼睛擷取到而決定人類所看到的顏色。白色就是所有的光都被反射所呈現的顏色，反之，黑色則是吸收了所有的光。
+
+  * cone cells(視錐細胞): 視網膜上的一種色覺和強光感受細胞
+  
+  * rod cells(視桿細胞): 是視網膜上與視錐細胞相稱的一種細胞，主要分布在視網膜中心周圍，且較視錐細胞對光更敏感，幾乎主要全部用於夜視力，並作為外圍視力的支持。
+    * In low light conditions, the rod cells in the eyes function to perceive shadows and darkness in the absence of color.
+
+顏色常見有三種三維度的表現形式：
+
+#### RGB{-}
+
+  * RGB（Red, Green, Blue）：$(R,G,B)\in [0,1]^3$
+  
+    三原色以其最高顏色強度（255）的比例呈現。
+
+```{r}
+library(grDevices)
+rgb(0,0,1) # 即對應顏色強度(0,0,255)
+rgb(0.5,0,0.7) # 即對應顏色強度(0.5*255,0,0.7*255)進位到整數
+```
+
+```{r,eval=TRUE}
+library(scales)
+show_col(c(rgb(0,0,1),rgb(0.5,0,0.7)))
+```
+
+#### HSV{-}
+
+  * HSV（Hue, Saturation, Value）:$(H,S,L)\in [0,1]^3$
+  
+    **Hue（色像）**: 以360度色環所要「**角度/360**」選擇基本色。  
+    **Saturation（飽合度）**: 可以想成白色與所選擇基本色的混合比例，0＝全白色，1＝全基本色。
+    **Value（lightness value照度）**: 可以想成要在多亮的環境下看，0＝全暗，1＝全亮。
+
+```{r, echo=FALSE, fig.cap="360度色像Hue"}
+knitr::include_graphics("img/color_wheel_hsl.png")
+```
+
+
+```{r, echo=FALSE, fig.cap="HSV意示圖"}
+knitr::include_graphics("img/HSV_color_solid_cylinder.png")
+```
+
+
+```{r, eval=TRUE}
+show_col(
+  c(
+    hsv(30/360,0,0),hsv(30/360,0.5,0),hsv(30/360,1,0), # (,,lightness=0) 全暗
+    hsv(30/360,0,0.5),hsv(30/360,0.5,0.5),hsv(30/360,1,0.5), # (,,lightness=0.5)
+    hsv(30/360,0,1),hsv(30/360,0.5,1),hsv(30/360,1,1) # (,,lightness=1) 全亮
+  )
+)
+```
+
+#### HCL{-}
+
+HCL是以人眼感受出發的色彩選擇，因此成品較能傳達作者所要的視覺感受。
+
+
+  * HCL（Hue, Chroma, Luminance）: $(H,C,L)\in [0,360]\times[0,\bar{c}]\times[0,100]$ HSL是以感官出發點的顏色描繪系統。  
+  **Hue（色像）**: 以360度色環選擇基本色。    
+  **Chroma（彩度）**: 彩度越低顏色感受越有陰影感。  
+  **Luminance（流明度）**: 流明度越高代表在越亮的環境觀看。
+  
+由於HCL是以人眼感受出發，每一種色像會有眼睛感觀的上下限，它受到彩度及流明度的設定影響，故HCL在不同色像下它的眼睛可感受C-L空間大小及位置會不同，我們可以使用`colorspace::choose_color()`來協助參數選擇：
+  
+```{r, eval=FALSE}
+choose_color()
+```
+  
+### 調色盤palette
+
+```{r, eval=FALSE}
+choose_palette(gui="shiny")
+```
+
+  * 使用`choose_palette(gui="shiny")`選完palette可以copy下來對應的palette hcl函數並修改函數的register參數成為所要名稱。
+
+調色盤（palette）是將N個顏色進行排序，排序原則依視覺化目的分成：
+
+  * Qualitative：只要突顯不同類別就好。
+  
+```{r, fig.cap="Qualitative：維持亮度、彩度，只改變色像"}
+pal_qual <- colorspace::qualitative_hcl(
+  n = 7, 
+  h = c(0, 360), c = 35, l = 85, 
+  register = "myQualitative"
+  )
+pal_qual %>% specplot(hcl=F)
+```
+
+<div class="alert alert-info">
+在hcl座標上，固定c=35,l=85,只改變色像由0角開始到360度結束。
+</div>
+
+  * Sequential: 要突顯不同類同時有排序感。
+
+```{r, fig.cap="Sequential：維持色像，逐步調高亮度、降低彩度"}
+pal_seq <- colorspace::sequential_hcl(
+  n = 7, 
+  h = 135, c = c(45, NA, NA), l = c(35, 95), 
+  power = 1.3, 
+  register = "mySequential")
+pal_seq %>% specplot(hcl=F)
+```
+
+<div class="alert alert-info">
+hcl由(135,45,35)高彩度走到(135,0,95)低彩度，走法的由power參數控制。
+</div>
+  
+  * Diverging: 要突顯不同類且強調極端族群的資料。
+  
+```{r, fig.cap="Diverging：兩段Sequential走法。"}
+pal_diverge <- colorspace::diverging_hcl(
+  n = 7, 
+  h = c(260, 0), c = 80, l = c(30, 90), 
+  power = 1.5, 
+  register = "myDiverge")
+pal_diverge %>% specplot(hcl=F)
+```
+
+<div class="alert alert-info">
+hcl由(260,80,30)高彩度走到(260,0,95)無彩度灰色（即sequential走法），再走到(0,80,30)。由於無彩度時hue不重要，下半段走法可以想成(0,0,95)走到(0,80,30)（而一次的sequential走法) ，走法的由power參數控制。
+```{r, eval=F, echo=F}
+c(hcl(260,80,30),hcl(0,80,30)) %>% show_col
+c(hcl(260,0,90),hcl(130,0,90)) %>% show_col
+```
+</div>

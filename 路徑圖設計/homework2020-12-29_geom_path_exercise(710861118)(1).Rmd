@@ -1,0 +1,96 @@
+---
+title: "台灣景氣循環：經濟成長率 v.s. 失業率"
+drake_cache: ".geom_path"
+output: html_document
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+  * 圖片一定要有Title, subtitle, 及資料來源。
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+library(ggrepel)
+library(showtext)
+library(lubridate)
+
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+
+jsonlite::fromJSON("https://www.dropbox.com/s/q7h63r8p497q7xz/df_gdp_unemployment4label.json?dl=1") -> df_gdp_unemployment4label
+jsonlite::fromJSON("https://www.dropbox.com/s/dukzr6w2wj5vzfv/df_gdp_unemployment4plt.json?dl=1") -> df_gdp_unemployment4plt
+```
+
+
+```{r plt_bcUnemployment}
+plt_bcUnemployment = {
+  ggplot(df_gdp_unemployment4plt)+
+    geom_path(
+      mapping=aes(
+        x=D4_urate2, y=lag(growthRate),
+      ), alpha=.9, size=1, color="#08519c"
+    )+
+    geom_point(
+      mapping=aes(
+        x=D4_urate2, y=lag(growthRate),
+      ), size=1
+    )+
+    geom_text_repel(
+      data=df_gdp_unemployment4label,
+      aes(
+        x=D4_urate2, y=lag(growthRate),
+        label=label
+      ), size=3, alpha=1
+    )+
+    labs(
+      title="1982年第1季-2020年第3季 前一季經濟成長率與失業率變化的時間軌跡",
+      subtitle = "年份標示點為該年1月，失業率變化是當季失業率減去去年同季失業率\n單位：%",
+      caption="資料來源: 行政院主計總處",
+      x="失業率變化",
+      y="前一季經濟成長率"
+    ) +
+    theme_bw()+
+    theme_light()+
+    theme(plot.title = element_text(size = 10, hjust = 0.5), 
+        plot.caption = element_text(face = "plain"),
+        plot.background = element_rect(fill = "#deebf7"),
+        panel.border = element_rect(linetype = "solid", fill = NA),
+        panel.grid.major = element_line(color = "#f0f0f0"),
+        panel.grid.minor = element_line(color = "#f0f0f0"))-> plt_bcUnemployment
+  ggsave(plt_bcUnemployment,
+         file="img/plt_bcUnemployment.svg",
+         width=5, height=5)
+
+  plt_bcUnemployment
+}
+```
+
+
+```{r}
+plt_bcUnemployment
+```
+

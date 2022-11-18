@@ -1,0 +1,273 @@
+---
+title: "plan_taiwanunemploymentrate"
+drake_cache: ".practice2"
+output: html_document
+params:
+  key: "" # 課綱編號，多個可用 ["key1", "key2"]
+  memberNames: ["莊程順"] # 組員姓名
+  memberIds: ["410873001"] # 學號
+  imgPreName: "unemploymentrate.svg" # ggsave時的檔名
+  imgPostName: "" # svg後製時的檔名
+  
+---
+
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+# 不同plan, new_cache裡的名字要不同
+cacheNew <- drake::new_cache('.cachename')
+options(rstudio_drake_cache = cacheNew$storr)
+
+purlActiveRmd_thenPlanMake()
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(readr)
+library(ggplot2)
+library(drake)
+library(rmd2drake)
+library(dplyr)
+library(showtext)
+font_add_google("Noto Sans TC")
+showtext_auto()
+theme(
+  text=element_text(family = "Noto Sans TC")
+  ) %>%
+  theme_set()
+
+rprojroot::is_rstudio_project -> pj
+pj$make_fix_file() -> root
+```
+
+## Data 
+
+
+
+## data
+
+```{r unemploymentrate}
+unemploymentrate = {
+  library(readr)
+  library(xml2)
+  read_xml("http://www.dgbas.gov.tw/public/data/open/Cen/MP0101A07.xml") -> unemploymentrate
+  xml2::as_list(unemploymentrate) -> unemploymentrate
+  unemploymentrate
+}
+```
+
+```{r DF}
+DF = {
+  dataready=map(1:length(unemploymentrate$DataCollection),~unemploymentrate$DataCollection[[.x]][[1]][[1]])
+  dataready=unlist(dataready)
+  seleteddata=str_detect(dataready,"[:digit:]{4}$")
+  dataready=unemploymentrate$DataCollection[seleteddata]
+  xdataready=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[1]][[1]]))
+  totaldataready=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[2]][[1]]))
+  mendataready=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[3]][[1]]))
+  womendataready=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[4]][[1]]))
+  dataready15=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[5]][[1]]))
+  dataready20=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[6]][[1]]))
+  dataready25=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[7]][[1]]))
+  dataready30=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[8]][[1]]))
+  dataready35=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[9]][[1]]))
+  dataready40=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[10]][[1]]))
+  dataready45=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[11]][[1]]))
+  dataready50=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[12]][[1]]))
+  dataready55=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[13]][[1]]))
+  dataready60=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[14]][[1]]))
+  #dataready65=unlist(map(1:(length(dataready)-1),~dataready[[.x]][[15]][[1]]))
+  DF=data.frame(
+  年份=as.numeric(xdataready),
+  失業率=as.numeric(totaldataready),
+  男失業率=as.numeric(mendataready),
+  女失業率=as.numeric(womendataready),
+  `失業率15~19`=as.numeric(dataready15),
+  `失業率20~24`=as.numeric(dataready20),
+  `失業率25~29`=as.numeric(dataready25),
+  `失業率30~34`=as.numeric(dataready30),
+  `失業率35~39`=as.numeric(dataready35),
+  `失業率40~44`=as.numeric(dataready40),
+  `失業率45~49`=as.numeric(dataready45),
+  `失業率50~54`=as.numeric(dataready50),
+  `失業率55~59`=as.numeric(dataready55),
+  `失業率60~64`=as.numeric(dataready60)
+  )
+  DF
+}
+```
+
+
+
+## graph
+
+```{r gg_unemploymentrate}
+gg_unemploymentrate1 = {
+  DF %>%
+    ggplot()+
+    geom_line(
+      aes(
+        x=年份,y=失業率,color="年失業率"
+      )
+    )
+}
+```
+```{r}
+gg_unemploymentrate1
+```
+
+```{r gg_unemploymentrate2}
+gg_unemploymentrate2={
+  gg_unemploymentrate1 +
+    geom_point(aes(x=年份,y=失業率),color="blue")+
+    geom_text(aes(x=年份,y=失業率),color="brown",label=DF$失業率,hjust=1,vjust=-1,size=3)
+    
+}
+```
+```{r}
+gg_unemploymentrate2
+```
+```{r gg_unemploymentratemen}
+gg_unemploymentratemen = {
+  gg_unemploymentrate2+
+    geom_line(
+      aes(
+        x=年份,y=男失業率,color="男性失業率"
+      )
+    )
+}
+```
+```{r gg_unemploymentratewomen}
+gg_unemploymentratewomen = {
+  gg_unemploymentratemen+
+    geom_line(
+      aes(
+        x=年份,y=女失業率,color="女性失業率"
+      )
+    )
+}
+```
+```{r}
+gg_unemploymentratewomen
+```
+```{r gg_unemploymentrateage}
+gg_unemploymentrateage = {
+  
+    
+    gg_unemploymentratewomen+
+    
+    geom_line(
+      aes(
+        x=年份,y=unlist(DF[5]),color=names(DF[5])
+      )
+    )+
+    geom_line(
+      aes(
+        x=年份,y=unlist(DF[6]),color=names(DF[6])
+      )
+    )+
+    geom_line(
+      aes(
+        x=年份,y=unlist(DF[7]),color=names(DF[7])
+      )
+    )+
+    geom_line(
+      aes(
+        x=年份,y=unlist(DF[8]),color=names(DF[8])
+      )
+    )+
+    geom_line(
+      aes(
+        x=年份,y=unlist(DF[9]),color=names(DF[9])
+      )
+    )+
+    geom_line(
+      aes(
+        x=年份,y=unlist(DF[10]),color=names(DF[10])
+      )
+    )+
+    geom_line(
+      aes(
+        x=年份,y=unlist(DF[11]),color=names(DF[11])
+      )
+    )+
+    geom_line(
+      aes(
+        x=年份,y=unlist(DF[12]),color=names(DF[12])
+      )
+    )+
+    geom_line(
+      aes(
+        x=年份,y=unlist(DF[13]),color=names(DF[13])
+      )
+    )+
+    geom_line(
+      aes(
+        x=年份,y=unlist(DF[14]),color=names(DF[14])
+      )
+    )
+    
+}
+
+```
+```{r}
+gg_unemploymentrateage
+```
+
+
+```{r gg_unemploymentrate3}
+gg_unemploymentrate3={
+  yearseleted={DF$年份 %% 5==0}
+  yearseleted=unique(c(DF$年份[[1]],DF$年份[yearseleted],DF$年份[[length(DF$年份)]]))
+  gg_unemploymentrateage+
+    scale_x_continuous(
+      breaks=yearseleted
+      ,label=yearseleted
+    )
+}
+
+```
+```{r}
+gg_unemploymentrate3
+```
+
+```{r ggTwbunemploymentrate}
+ggTwbunemploymentrate= {
+  gg_unemploymentrate3 +
+    labs(
+      title="臺灣人力資源調查失業率(1978~2019)",
+      subtitle="失業率，單位：% ",
+      caption="資料出處: 政府開放資料平台https://data.gov.tw/dataset/6637",
+      y="失業率",
+      x="年份"
+    )+theme_bw()  +
+
+  theme(axis.text.x = element_text(angle = 45,hjust = 1))
+}
+```
+
+```{r}
+ggTwbunemploymentrate
+```
+
+## export
+
+```{r save_gg_unemploymentrate}
+save_gg_unemploymentrate = {
+  ggsave(
+    
+    ggTwbunemploymentrate,
+    file=file.path(root(),"20201021practice/unemploymentrate.svg"),
+    width=8,
+    height=5
+  )
+  
+}
+```
+

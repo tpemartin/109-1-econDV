@@ -1,0 +1,58 @@
+---
+title: "my research paper"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+## rmarkdown knit, produce correct Chinese characters
+knitr::opts_chunk$set(fig.showtext=TRUE, fig.retina = 1)
+## makecondition
+library(readr)
+library(ggplot2)
+library(drake)
+library(rmd2drake)
+library(dplyr)
+library(stringr)
+library(showtext)
+# font_add_google("Noto Sans TC")
+font_add("Noto Sans TC", # 把字形加到R系統裡，取名為notoSansTC family
+         regular="NotoSansTC-Regular.otf", # family裡的regular字體檔名
+         bold="NotoSansTC-Bold.otf") #
+showtext_auto()
+theme(
+  text=element_text(family = "Noto Sans TC")
+  ) %>%
+  theme_set()
+
+rprojroot::is_rstudio_project -> pj
+pj$make_fix_file() -> root
+
+## 產生可讀取drake_cache的loaddd函數
+source("plan_drake_myResearchPaper.R")
+loaddd <- load_plan_drake_myResearchPaper
+```
+
+## GitHub Documents
+
+This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+
+## Including Code
+
+You can include R code in the document as follows:
+
+```{r}
+loaddd(ggline2Y3Y) 
+ggline2Y3Y
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+loaddd(ggTwbInterestRates_bw)
+ggTwbInterestRates_bw
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

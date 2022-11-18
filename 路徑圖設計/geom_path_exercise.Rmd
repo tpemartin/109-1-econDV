@@ -1,0 +1,135 @@
+---
+title: "台灣景氣循環：經濟成長率 v.s. 失業率"
+drake_cache: ".geom_path"
+output: html_document
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+  * 圖片一定要有Title, subtitle, 及資料來源。
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(readr)
+library(ggplot2)
+library(drake)
+library(rmd2drake)
+library(dplyr)
+library(showtext)
+library(stringr)
+library(purrr)
+library(ggrepel)
+#econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> pj
+pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+
+jsonlite::fromJSON("https://www.dropbox.com/s/q7h63r8p497q7xz/df_gdp_unemployment4label.json?dl=1") -> df_gdp_unemployment4label
+jsonlite::fromJSON("https://www.dropbox.com/s/dukzr6w2wj5vzfv/df_gdp_unemployment4plt.json?dl=1") -> df_gdp_unemployment4plt
+```
+
+##Chinese
+```{r}
+font_families_google() %>%
+  stringr::str_subset(regex("noto", ignore_case = T)) # 鎖定東方語系字形系列Noto
+font_add_google("Noto Sans TC") # 加入無襯字的Noto繁體中文
+font_families() # 查看notoSansTC family有沒有成功加入
+
+```
+
+
+
+```{r pointcolor}
+df_gdp_unemployment4label[['label']] <- as.numeric(df_gdp_unemployment4label[['label']])
+
+df_gdp_unemployment4label[["color1"]] <- cut(df_gdp_unemployment4label[['label']],c(1977,1986,1996,1998,2000,2004,2008,2012,2016,2019, 2022))
+
+
+levels(df_gdp_unemployment4label[["color1"]]) <- c("#8E8E8E","#4F4F4F","#B9B9FF","#9393FF","#79FF79","#00DB00","#4A4AFF","#0000C6","#00A600","#007500")
+
+
+df_gdp_unemployment4plt[["color1"]] <- df_gdp_unemployment4label[["color1"]]
+
+```
+
+```{r pointsize}
+df_gdp_unemployment4label[["size"]] <- cut(df_gdp_unemployment4label[['label']],c(1977,1988, 1999,2011, 2022))
+
+levels(df_gdp_unemployment4label[["size"]])
+levels(df_gdp_unemployment4label[["size"]]) <- c(0.5,1,1.5,2)
+
+df_gdp_unemployment4plt[["size"]] <- df_gdp_unemployment4label[["size"]]
+
+length(df_gdp_unemployment4plt[["size"]])
+```
+
+
+
+
+```{r plt_bcUnemployment}
+plt_bcUnemployment = {
+  ggplot(df_gdp_unemployment4plt)+
+    geom_path(
+      mapping=aes(
+        x=D4_urate2, y=lag(growthRate)
+      ), alpha=0.1, size=1, 
+    )+
+    geom_path(
+      mapping=aes(
+        x=D4_urate2, y=lag(growthRate)
+      ), alpha=0.1, size=1, 
+    )+
+    geom_point(
+      mapping=aes(
+        x=D4_urate2, y=lag(growthRate),
+      ), size=1,color=df_gdp_unemployment4plt[["color1"]]
+    )+
+    geom_text_repel(
+      data=df_gdp_unemployment4label,
+      aes(
+        x=D4_urate2, y=lag(growthRate),
+        label=label
+      ), size=3, alpha=0.3,color=df_gdp_unemployment4label[[8]],
+    )+
+    theme(
+      panel.background = element_rect(fill="#e1cdb5")
+    )+
+    labs(
+      title="1982年第1季-2020年第3季 前一季經濟成長率與失業率變化的時間軌跡",
+      subtitle = "年份標示點為該年1月，失業率變化是當季失業率減去去年同季失業率\n單位：%",
+      caption="資料來源: 行政院主計總處",
+      x="失業率變化",
+      y="前一季經濟成長率"
+    ) -> plt_bcUnemployment
+  ggsave(plt_bcUnemployment,
+         file="plt_bcUnemployment.svg",
+         width=5, height=3)  
+  plt_bcUnemployment
+}
+```
+
+```{r}
+econDV::svgOpen("plt_bcUnemployment.svg")
+```
+
+
+```{r}
+plt_bcUnemployment
+```
+

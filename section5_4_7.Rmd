@@ -1,0 +1,97 @@
+
+# 5.4.7 continuous variable
+
+
+
+```{r}
+P(0) #a778F823
+P(0.23)
+P(0.77)
+P(1)
+```
+
+```{r}
+P <- function(x){
+  
+  
+  return(colorHex)
+}
+```
+
+```{r}
+rgb(2,1,0)
+```
+
+
+```{r}
+myRY_palette <- function(x){
+  whichIsNotNA <- which(!is.na(x))
+  colorHex <- vector("character", length(x))
+  colorHex[whichIsNotNA] <- rgb(1,x[whichIsNotNA]*1,0)
+  colorHex[-whichIsNotNA] <- "#606060"
+  return(colorHex)
+}
+
+myRY_palette(0)
+myRY_palette(0.23)
+myRY_palette(0.77)
+myRY_palette(1)
+myRY_palette(c(0, 0.23, 0.77, 1, NA))
+```
+```{r}
+myRY_palette <- function(x){
+  return(
+    rgb(1, x*1,0 ) 
+  )
+}
+```
+
+
+```{r}
+ggplot()+
+  geom_xxx(....)+
+  scale_color_myRY()
+```
+
+```{r}
+myRY_palette <- # <<drake_aes3>>
+  scales::colour_ramp(
+    c(rgb(1,0,0),rgb(1,1,0))
+  )
+```
+
+```{r}
+
+# 製作獨家scale_color_XXX函數
+scale_color_myRY <- # <<drake_aes3>>
+  function(...) {
+    continuous_scale( # scale constructor
+      "color", # 給什麼aesthetic元素用
+      "myRY_palette", # 有錯誤時要怎麼稱呼你的scale
+      palette = myRY_palette, # palette function: [0,1] -> color, 
+      ...
+    )
+  }
+```
+
+```{r}
+df_continuous <-
+  data.frame(
+    x=sample(-500:500, 329),
+    y=1
+  )
+
+ggplot(df_continuous) +
+  geom_point(
+    aes(x=x,y=y,color=x)
+  ) +
+  scale_color_myRY(
+    na.value="#606060"
+  )
+
+scales::cscale(df_continuous$x, myRY_palette)
+  # scale_color_myRY(
+  #   name="My color" # name是額外input
+  # )
+```
+

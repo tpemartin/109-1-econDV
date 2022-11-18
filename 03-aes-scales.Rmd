@@ -1,0 +1,754 @@
+# Aesthetic 
+
+資料視覺感受取決於：
+
+  * 幾何圖形位置：可由**x**, **y**座標（cartesian coordinate），或**r**, **theta**座標（polar coordiate）決定。
+  
+  * 色彩：圖形外框（stroke **color**）、圖形內部填充（**fill**），通透度（**alpha**）。
+  
+  * 線條設計：**linetype**
+  
+  * 大小粗細：**size**
+
+```{r}
+teachDS::img_centering("https://clauswilke.com/dataviz/aesthetic_mapping_files/figure-html/common-aesthetics-1.png", width="80%")
+```
+
+## mapping
+
+geom_xxx(
+  mapping=aes(x=..., y=...),
+  data
+)
+
+Almost all geoms need the information of 
+```{r}
+
+```
+
+
+## scales
+
+```{r, eval=TRUE, echo=FALSE}
+klippy::klippy()
+```
+
+```{r, echo=FALSE,message=FALSE, eval=TRUE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, eval=TRUE, fig.show='asis',fig.showtext=TRUE)
+library(dplyr); library(stringr); library(ggplot2); library(plotly); library(lubridate); library(readr); library(tidyr); library(showtext)
+
+font_add("QYuan","cwTeXQYuan-Medium.ttf") # 新增字體
+showtext_auto(enable=TRUE) #啟用字體
+theme_set(theme_classic())
+knitr::opts_chunk$set(out.width='80%', fig.asp=.75, fig.align='center', fig.showtext=T)
+klippy::klippy()
+```
+
+每個geom有它可以使用的aes，geom裡的aes只是指定不同美學的決定資料變數，然而資料變數「值」如何映到「美學呈現」透過scale來更動。
+
+<div class="alert alert-info">
+ggplot2的所有aesthetic specifications: <https://ggplot2.tidyverse.org/articles/ggplot2-specs.html>
+</div>
+
+## color/colour
+
+### 常用套件
+
+```{r}
+library(grDevices) # 不同顏色模型代碼的呈現及轉換
+library(scales) # show_col()螢幕立即顯示顏色
+library(colorspace) # 調色盤選擇及ggplot應用工具
+library(shinyjs) # 支援套件
+```
+
+
+### 顏色模型
+
+光的三原色為R(紅)G(綠)B(藍)，三種光原色一起發光就會產生俗稱的白光。事實上光是沒有顏色的。而人類眼睛所看物體的顏色，是光線照在物體上所反射的波長被眼睛擷取到而決定人類所看到的顏色。白色就是所有的光都被反射所呈現的顏色，反之，黑色則是吸收了所有的光。
+
+顏色常見有三種三維度的表現形式：
+
+#### RGB{-}
+
+  * RGB（Red, Green, Blue）：$(R,G,B)\in [0,1]^3$
+  
+    三原色以其最高顏色強度（255）的比例呈現。
+
+```{r}
+library(grDevices)
+rgb(0,0,1) # 即對應顏色強度(0,0,255)
+rgb(0.5,0,0.7) # 即對應顏色強度(0.5*255,0,0.7*255)進位到整數
+```
+
+```{r,eval=TRUE}
+library(scales)
+show_col(c(rgb(0,0,1),rgb(0.5,0,0.7)))
+```
+
+#### HSV{-}
+
+  * HSV（Hue, Saturation, Value）:$(H,S,L)\in [0,1]^3$
+  
+    **Hue（色像）**: 以360度色環所要「**角度/360**」選擇基本色。  
+    **Saturation（飽合度）**: 可以想成白色與所選擇基本色的混合比例，0＝全白色，1＝全基本色。
+    **Value（lightness value照度）**: 可以想成要在多亮的環境下看，0＝全暗，1＝全亮。
+
+```{r, echo=FALSE, fig.cap="360度色像Hue"}
+knitr::include_graphics("img/color_wheel_hsl.png")
+```
+
+
+```{r, echo=FALSE, fig.cap="HSV意示圖"}
+knitr::include_graphics("img/HSV_color_solid_cylinder.png")
+```
+
+
+```{r, eval=TRUE}
+show_col(
+  c(
+    hsv(30/360,0,0),hsv(30/360,0.5,0),hsv(30/360,1,0), # (,,lightness=0) 全暗
+    hsv(30/360,0,0.5),hsv(30/360,0.5,0.5),hsv(30/360,1,0.5), # (,,lightness=0.5)
+    hsv(30/360,0,1),hsv(30/360,0.5,1),hsv(30/360,1,1) # (,,lightness=1) 全亮
+  )
+)
+```
+
+#### HCL{-}
+
+HCL是以人眼感受出發的色彩選擇，因此成品較能傳達作者所要的視覺感受。
+
+
+  * HCL（Hue, Chroma, Luminance）: $(H,C,L)\in [0,360]\times[0,\bar{c}]\times[0,100]$ HSL是以感官出發點的顏色描繪系統。  
+  **Hue（色像）**: 以360度色環選擇基本色。    
+  **Chroma（彩度）**: 彩度越低顏色感受越有陰影感。  
+  **Luminance（流明度）**: 流明度越高代表在越亮的環境觀看。
+  
+由於HCL是以人眼感受出發，每一種色像會有眼睛感觀的上下限，它受到彩度及流明度的設定影響，故HCL在不同色像下它的眼睛可感受C-L空間大小及位置會不同，我們可以使用`colorspace::choose_color()`來協助參數選擇：
+  
+```{r, eval=FALSE}
+choose_color()
+```
+  
+### 調色盤palette
+
+```{r, eval=FALSE}
+choose_palette(gui="shiny")
+```
+
+  * 使用`choose_palette(gui="shiny")`選完palette可以copy下來對應的palette hcl函數並修改函數的register參數成為所要名稱。
+
+調色盤（palette）是將N個顏色進行排序，排序原則依視覺化目的分成：
+
+  * Qualitative：只要突顯不同類別就好。
+  
+```{r, fig.cap="Qualitative：維持亮度、彩度，只改變色像"}
+pal_qual <- colorspace::qualitative_hcl(
+  n = 7, 
+  h = c(0, 360), c = 35, l = 85, 
+  register = "myQualitative"
+  )
+pal_qual %>% specplot(hcl=F)
+```
+
+<div class="alert alert-info">
+在hcl座標上，固定c=35,l=85,只改變色像由0角開始到360度結束。
+</div>
+
+  * Sequential: 要突顯不同類同時有排序感。
+
+```{r, fig.cap="Sequential：維持色像，逐步調高亮度、降低彩度"}
+pal_seq <- colorspace::sequential_hcl(
+  n = 7, 
+  h = 135, c = c(45, NA, NA), l = c(35, 95), 
+  power = 1.3, 
+  register = "mySequential")
+pal_seq %>% specplot(hcl=F)
+```
+
+<div class="alert alert-info">
+hcl由(135,45,35)高彩度走到(135,0,95)低彩度，走法的由power參數控制。
+</div>
+  
+  * Diverging: 要突顯不同類且強調極端族群的資料。
+  
+```{r, fig.cap="Diverging：兩段Sequential走法。"}
+pal_diverge <- colorspace::diverging_hcl(
+  n = 7, 
+  h = c(260, 0), c = 80, l = c(30, 90), 
+  power = 1.5, 
+  register = "myDiverge")
+pal_diverge %>% specplot(hcl=F)
+```
+
+<div class="alert alert-info">
+hcl由(260,80,30)高彩度走到(260,0,95)無彩度灰色（即sequential走法），再走到(0,80,30)。由於無彩度時hue不重要，下半段走法可以想成(0,0,95)走到(0,80,30)（而一次的sequential走法) ，走法的由power參數控制。
+```{r, eval=F, echo=F}
+c(hcl(260,80,30),hcl(0,80,30)) %>% show_col
+c(hcl(260,0,90),hcl(130,0,90)) %>% show_col
+```
+</div>
+
+### ggplot應用
+
+#### 基本概念{-}
+
+ggplot是透過`+scale_colour/scale_fill...()`來改變顏色與變數值的對應：
+  
+  * `scale_color_...`用來改變aes為color的顏色。
+  
+  * `scale_fill_...`用來改變aes為fill的顏色。
+
+```{r}
+data.frame(
+  x1 = factor(sample(c(1L,2L,3L),100,replace=T)),
+  x2 = runif(100),
+  y = runif(100),
+  z1 = rnorm(100),
+  z2 = factor(sample(letters[1:4],100,replace=T))
+) -> df_example
+```
+
+```{r}
+df_example %>%
+  ggplot()+
+  geom_boxplot(
+    aes(x=x1,y=y,fill=z2)
+  ) -> basicBoxplot
+basicBoxplot
+```
+
+
+```{r}
+df_example %>%
+  ggplot()+
+  geom_point(
+    aes(x=x2,y=y,color=z1)
+  ) -> basicScatterPlot
+basicScatterPlot
+```
+
+#### 套用調色盤palette{-}
+
+
+colorspace套件額外增加了以下的`scale_...()`函數：
+
+`scale_<geom裡的色彩aes>_<aes變數類型>_<色彩使用目的>`
+
+```{r}
+basicBoxplot +
+  scale_fill_discrete_qualitative(palette="myQualitative",nmax=5) # 由於色圈會由0度出發回到360度所以第1個及第5個會是同色，因此4類要創出5個顏色才不會有1,4類同色問題。
+```
+
+```{r}
+basicScatterPlot +
+  scale_color_continuous_sequential(palette = "mySequential")
+```
+
+```{r}
+basicScatterPlot +
+  scale_color_continuous_diverging(palette="myDiverge")
+```
+
+#### 顏色變化率{-}
+
+有時用來對應顏色的資料太集中在某一類或某些數值範圍，這時圖面上反而區分不了資料差異，此時有必要改變調色盤的顏色變化率。
+
+```{r}
+data.frame(
+  x1 = factor(sample(c(1L,2L,3L),100,replace=T)),
+  x2 = runif(100),
+  y = runif(100),
+  z1 = c(rnorm(30,-1,0.05),rnorm(70,1,2))
+) -> df_example2
+```
+
+```{r}
+df_example2 %>%
+  ggplot()+
+  geom_point(
+    aes(x=x2,y=y,color=z1),size=2
+  )
+```
+
+#### 範例：使用顏色突顯{-}
+
+
+##### 處理資料{-}
+
+```{r}
+library(readr)
+transcriptEachYear <- read_csv("https://www.dropbox.com/s/hsuuedc7wyvq7n5/transcriptEachYear.csv?dl=1")
+```
+
+```{r}
+transcriptEachYear %>%
+  spread(
+    年級,學年平均成績
+  ) -> transcriptEachYear_spread
+```
+
+##### 選色{-}
+
+```{r}
+colorspace::sequential_hcl(n = 7, h = c(300, 200), c = c(60, NA, 0), l = c(25, 95), power = c(0.7, 1.3), register = "Custom-Palette") -> color7
+color7 %>% scales::show_col()
+color7
+```
+
+##### 套用{-}
+
+```{r, fig.cap="一二年級成績關連，紫色為社會學系"}
+transcriptEachYear_spread %>%
+  ggplot()+
+  geom_point(
+    aes(x=`1`, y=`2`), alpha=0.1,color="#C8E2EB"
+  ) +
+  geom_point(
+    data=transcriptEachYear_spread %>%
+      filter(學系=="社會學系"),
+     aes(x=`1`, y=`2`), color="#724E95"
+  ) +
+  labs(x="一年級成績",y="二年級成績")
+```
+
+
+
+### 其他
+
+
+  * [Colors from Image](https://html-color-codes.info/colors-from-image/)
+
+
+#### 色盲{-}
+
+  * deutan: green cones in the eye detect too much red light and not enough green light. As a result red, yellow, green, and brown can appear similar, especially in low light.
+  
+  * protan: the red cones do not detect enough red and are too sensitive to greens, yellows, and oranges. As a result, greens, yellows, oranges, reds, and browns may appear similar, especially in low light.
+  
+  * tritan: a loss of color discrimination for shades of blue and yellow but it is not typically a form of color blindness.
+
+<!-- 
+
+### 色彩設計原則
+
+  1. 選定底色。
+  
+  2. 相對於底色，選擇geom色系：
+  
+      * 不同顏色的色調
+  
+  3. 放上文字
+  
+```{r, fig.cap="UI的色彩選擇流程", echo=FALSE}
+knitr::include_graphics("https://miro.medium.com/max/2356/1*ZUW_ewPjDMtV7Yk51OFH2w.png")
+```
+
+-->
+
+### 練習
+
+<div class="alert exercise">
+下載台灣五等距家庭所得家庭可支配所得：
+```{r, echo=T, eval=F, warning=FALSE}
+disposableIncome <- read_csv("https://www.dropbox.com/s/z80sbjw94cjex8x/disposableIncome.csv?dl=1",
+locale = locale(encoding = "BIG5"), skip = 4)
+```
+計設一圖突顯不同家庭所得在2003年金融海嘯後的所得上升速度差異。
+```{r, echo=F, eval=F}
+disposableIncome %>% 
+  na.omit() -> disposableIncome
+names(disposableIncome)[1] <- "年"
+disposableIncome %>%
+  mutate(
+    年=as.integer(年)
+  ) -> disposableIncome
+disposableIncome %>%
+  gather(
+    contains("五等分"),
+    key="所得組距",
+    value="可支配所得"
+  ) -> disposableIncome_gather
+
+# write_csv(disposableIncome_gather,"/Users/martin/Dropbox/github-data/disposableIncome_gather.csv")
+disposableIncome_gather %>%
+  ggplot()+
+  geom_line(
+    aes(
+      x=年,y=可支配所得,color=所得組距
+    )
+  )
+```
+</div>
+
+## Linetype
+
+Two ways to specify it.
+
+### 使用線形名稱{-}
+
+<img src="img/line_types-1.png" style="width:70%;">
+
+```{r}
+library(readr)
+disposableIncome <- read_csv("https://www.dropbox.com/s/z80sbjw94cjex8x/disposableIncome.csv?dl=1")
+
+disposableIncome_gather <- read_csv("https://www.dropbox.com/s/cdw1f10jow4frxb/disposableIncome_gather.csv?dl=1")
+```
+
+
+```{r}
+disposableIncome %>%
+  mutate(
+    年=as.integer(X1)
+  ) -> disposableIncome
+
+disposableIncome %>%
+  ggplot(aes(x=年,y=平均每戶可支配所得))+
+  geom_line(linetype="dashed")
+```
+
+### 使用hex碼{-}
+用數字來定義一個完整線段的形式。
+"33"：3個點距的「線」，接3個點路的「空白」
+
+連線數字分別代表：「線」「空白」「線」「空白」依此類推
+
+```{r}
+disposableIncome %>%
+  ggplot(aes(x=年,y=平均每戶可支配所得))+
+  geom_line(linetype="33")
+```
+
+```{r}
+disposableIncome %>%
+  ggplot(aes(x=年,y=平均每戶可支配所得))+
+  geom_line(linetype='2451')
+```
+
+### scale_linetype套用 
+
+```{r}
+library(magrittr)
+disposableIncome_gather$所得組距 %<>%
+  factor(levels=c(
+    "可支配所得按戶數五等分位組-最低所得組",
+    "可支配所得按戶數五等分位組-次低所得組",
+    "可支配所得按戶數五等分位組-中間所得組",
+    "可支配所得按戶數五等分位組-次高所得組",
+    "可支配所得按戶數五等分位組-最高所得組"
+  )) 
+
+disposableIncome_gather %>%
+  ggplot(aes(x=年,y=可支配所得))+
+  geom_line(
+    aes(linetype=所得組距,size=所得組距)
+  ) +
+  scale_linetype_manual(
+    values=c("15","24","34","51","71")
+  ) +
+  scale_size_manual(
+    values=c(0.1,0.3,0.3,0.5,0.7)*1.5
+  ) -> p_linetype
+p_linetype
+```
+
+
+## Date/Time
+若x/y軸為日期/時間，要更改x/y軸美感呈現，以x軸為例，可使用`scale_x_*`，其中`*`依日期/時間型態（以其class決定）分成：
+
+  - scale_x_date: class Date  
+  - scale_x_datetime: class POSIXct   
+  - scale_x_time: class hms  
+
+每一種詳細用法可參見[Position scales for date/time data](https://ggplot2.tidyverse.org/reference/scale_date.html)。
+
+由於三種的使用原則大致相同，我們以常見的日期（Date）型態做說明。
+
+**範例**：消費者物價指數
+
+資料來源： 行政院主計總處
+
+單位：民國105年=100
+
+資料處理
+```{r}
+dataCPI <- read_csv("https://www.dropbox.com/s/ov2bvef5o3apei0/PR0101A2Mc.csv?dl=1")
+
+## 改變數名稱
+dataCPI %>% 
+  dplyr::rename(
+    年月=X1,
+    CPI=原始值
+  ) -> dataCPI
+
+# 移除「有NA」的row
+dataCPI %>% na.omit() -> dataCPI
+
+## 調整class
+dataCPI$年月 %>% str_c("/01") %>% #擴增為YMD表示
+  ymd() -> dataCPI$年月
+
+# 改成2003M1為基期,其指數為100
+dataCPI %>% filter(年月==ymd("2003-01-01")) %>% 
+  select(CPI) -> CPI2003M1
+dataCPI %>% 
+  mutate(CPI=CPI/CPI2003M1$CPI*100) -> dataCPI2
+```
+
+
+基本圖形
+```{r}
+dataCPI2 %>% ggplot()+
+  geom_line(aes(x=年月,y=CPI)) -> basePlot2
+basePlot2
+```
+
+### limits: scale變數呈現範圍
+
+**NA**：表示沒設限
+```{r}
+basePlot2 +
+  scale_x_date(limits=c(ymd("2003-01-01"),NA))
+```
+
+#### 適用於任何scale{-}
+
+  * x scale呈現範圍：2003-01-01以後
+  
+  * y scale呈現範圍：80以上
+  
+```{r}
+basePlot2 +
+  scale_x_date(limits=c(ymd("2003-01-01"),NA))+
+  scale_y_continuous(limits=c(80,NA)) 
+```
+
+
+  * linetype scale只呈現"次低所得組","中間所得組","次高所得組"
+  
+```{r}
+disposableIncome_gather %>%
+  ggplot(aes(x=年,y=可支配所得))+
+  geom_line(
+    aes(linetype=所得組距)
+  ) +
+  scale_linetype_manual(
+    values=c("15","24","34","51","71"),
+    limits=c(
+    "可支配所得按戶數五等分位組-次低所得組",
+    "可支配所得按戶數五等分位組-中間所得組",
+    "可支配所得按戶數五等分位組-次高所得組")
+  )
+```
+
+
+
+### breaks: scale變數圖例說明範圍
+
+
+```{r}
+breakDates <- c("2003-01-01",
+                "2005-01-01","2010-01-01","2015-01-01",
+                "2018-01-01")
+breakDates %>% ymd() -> breakDates
+basePlot2 +
+  scale_x_date(limits=c(ymd("2003-01-01"),NA),
+               breaks = breakDates)
+```
+
+#### 適用於任何scale
+
+  * linetype scale的圖例只說明"次低所得組","中間所得組","次高所得組"
+  
+```{r}
+disposableIncome_gather %>%
+  ggplot(aes(x=年,y=可支配所得))+
+  geom_line(
+    aes(linetype=所得組距)
+  ) +
+  scale_linetype_manual(
+    values=c("15","24","34","51","71"),
+    breaks=c(
+    "可支配所得按戶數五等分位組-次低所得組",
+    "可支配所得按戶數五等分位組-中間所得組",
+    "可支配所得按戶數五等分位組-次高所得組")
+  )
+```
+
+
+
+
+### labels: scale變數圖例說明文字對應
+
+#### 手動設標示點名稱{-} 
+
+```{r}
+breakDates <- c("2003-01-01",
+                "2005-01-01","2010-01-01","2015-01-01",
+                "2018-01-01")
+breakDates %>% ymd() -> breakDates
+
+breakLabels <- c("2003",
+                 "2005","2010","2015",
+                 "2018")
+basePlot2 +
+  scale_x_date(limits=c(ymd("2003-01-01"),NA),
+               breaks = breakDates,
+               labels = breakLabels)
+```
+
+#### 函數設標示點名稱{-} 
+
+函數必需能由breaks input產生字串output
+```{r}
+basePlot2 +
+  scale_x_date(limits=c(ymd("2003-01-01"),NA),
+               breaks = breakDates,
+               labels = function(x) year(x))
+```
+
+
+<div class="alert exercise">
+請將年月標示名稱改成民國年表示。
+</div>
+
+#### 適用於任何scale
+
+  * linetype scale的圖例只說明"次低所得組","中間所得組","次高所得組"
+  
+```{r}
+disposableIncome_gather %>%
+  ggplot(aes(x=年,y=可支配所得))+
+  geom_line(
+    aes(linetype=所得組距)
+  ) +
+  scale_linetype_manual(
+    values=c("15","24","34","51","71"),
+    breaks=c(
+    "可支配所得按戶數五等分位組-次低所得組",
+    "可支配所得按戶數五等分位組-中間所得組",
+    "可支配所得按戶數五等分位組-次高所得組"),
+    labels=c(
+    "次低所得組",
+    "中間所得組",
+    "次高所得組"),
+    )
+```
+
+
+## geom_text
+
+圖例(legends)有時並不是視覺化最佳變數說明方式，有時取消它改用`geom_text()`或`annotate()`反而較佳。
+
+```{r}
+disposableIncome_gather %>%
+  group_by(所得組距) %>%
+  summarise(
+    最後一年=last(年),
+    可支配所得=last(可支配所得)
+  ) %>%
+  ungroup() %>%
+  mutate(
+    所得組=stringr::str_replace(
+      as.character(所得組距),"可支配所得按戶數五等分位組-","")
+    )-> disposableIncome_gather_legend
+
+disposableIncome_gather %>%
+  ggplot(aes(x=年,y=可支配所得))+
+  geom_line(
+    aes(linetype=所得組距)
+  ) +
+  scale_linetype_manual(
+    values=c("15","24","34","51","71"),
+    breaks=c(
+    "可支配所得按戶數五等分位組-次低所得組",
+    "可支配所得按戶數五等分位組-中間所得組",
+    "可支配所得按戶數五等分位組-次高所得組")
+    ) +
+  theme(legend.position = "none") + # 取消legend
+  geom_text(
+    data=disposableIncome_gather_legend,
+    aes(
+      x=最後一年,
+      y=可支配所得,
+      label=所得組
+    ),
+    nudge_x= -3.8, size=3
+  )
+```
+
+## 練習
+
+<div class="alert exercise">
+[作業2019-10-08，作品001](https://bookdown.org/tpemartin/flexdashboard2019_10_08/flexdashboard.html)以你認為合理的方式重新設計。
+```{r}
+load(url("https://github.com/tpemartin/course-108-1-inclass-datavisualization/blob/master/%E4%BD%9C%E5%93%81%E5%B1%95%E7%A4%BA/homework1/graphData_homework2019-10-07_001.Rda?raw=true"))
+
+c('公投案編號','六都','同意票數','有效票數','同意比例（同意票／有效票）') -> names(graphData$Case_10_result)
+
+```
+</div>
+
+
+<div class="alert exercise">
+將[作業2019-10-08，作品014](https://bookdown.org/tpemartin/flexdashboard2019_10_08/flexdashboard.html)改成時間趨勢圖，並添加你認為可以改善的設計。
+```{r}
+load(url("https://github.com/tpemartin/course-108-1-inclass-datavisualization/blob/master/%E4%BD%9C%E5%93%81%E5%B1%95%E7%A4%BA/homework1/graphData_homework2019-10-08_014.Rda?raw=true"))
+
+c('年分','地區','來台旅遊人數(萬)') -> names(graphData$travelerFromAsia)
+```
+</div>
+
+## 參考資料
+
+https://www.r-graph-gallery.com/colors.html
+
+https://www.nceas.ucsb.edu/~frazier/RSpatialGuides/colorPaletteCheatsheet.pdf
+
+https://cran.r-project.org/web/packages/colorspace/vignettes/colorspace.html#usage_with_ggplot2
+
+Thinking design by Adobe:
+
+  * [Part 1: Adaptive Color in Design Systems](https://medium.com/thinking-design/adaptive-color-in-design-systems-7bcd2e664fa0)
+  
+  * [Part 2: Introducing Adaptive Color Palettes](https://medium.com/thinking-design/introducing-adaptive-color-palettes-111b5842fc88)
+  
+  * [Part 3: Adaptive Color in Spectrum, Adobe’s Design System](https://medium.com/@NateBaldwin/adaptive-color-in-spectrum-adobes-design-system-feeeec89a2c7)
+
+
+colorspace website: <http://colorspace.r-forge.r-project.org/articles/colorspace.html>
+
+<!--
+
+```{r}
+library(readr)
+allBankData <- read_csv("https://www.dropbox.com/s/ic85xk7nsu9g6g8/allBankData.csv?dl=1")
+```
+
+```{r}
+graphData <- list()
+
+allBankData %>%
+  transmute(
+    年月=stringr::str_extract_all(年月,"[:digit:]+"), # 將年月改成list, 每個元素是個字串向量，其第一個元素為年，第二個元素為月
+    年=purrr::map_chr(年月,function(x) x[1]), # 取出年月的年成character vector
+    月=purrr::map_chr(年月,function(x) x[2]), # 取出年月的月成character vector
+    西元年=as.integer(年)+1911, # 年改成整數加1911成西元年
+    西元年月日=西元年 %>% 
+      as.character() %>% # 西元年改成字串，
+      stringr::str_c(月,"01",sep="-") %>% # 再與月及"01"合成"西元年-月-01"
+      lubridate::ymd()
+  ) %>%
+  select(西元年月日) %>%
+  bind_cols(
+    allBankData
+  ) -> graphData$allBankData
+```
+
+
+```{r}
+graphData$allBankData %>%
+  ggplot()+
+  geom_line(aes(x=西元年月日,y=`定存利率-一年期-固定`,color=銀行))
+```
+-->

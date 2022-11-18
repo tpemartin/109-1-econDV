@@ -1,0 +1,83 @@
+---
+title: "Public participation"
+drake_cache: ".publicPublication"
+params:
+  key: "公Cc-Ⅳ-1"
+  memberGmails: ["mary@gm.ntpu.edu.tw","cook@gmail.com"]
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+memberGmails: 為組員進入google classroom的gmail
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(rmd2drake)
+library(drake)
+
+# If you use git and does not want to track cache folder, put down the following command:
+# set_gitignore(".myCache")
+```
+
+## makecondition
+
+```{r makecondition}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(svglite)
+library(WDI)
+library(xml2)
+```
+
+## data
+
+```{r targetDataList}
+targetDataList = {
+  covid19Expense05 <- xml2::read_xml("https://www.mof.gov.tw/download/c9e382ef465b40999cb31cf2dd376671")
+  covid19Expense05 <- as_list(covid19Expense05)
+  
+  covid19Expense05$CGBAH100T_中央政府總預算收支執行狀況月報表本年度部分 -> targetDataList
+  targetDataList
+}
+```
+
+
+```{r get_budgetDFfromMonthData}
+get_budgetDFfromMonthData = function(targetBudgetMonth)
+{
+  
+#   targetBudgetMonth[1:11]
+# targetBudgetMonth %>%
+#   map(
+#    ~length(.x)
+#   )
+
+targetBudgetMonth[1:11] %>%
+  map_dfc(
+    ~.x[[1]]
+  ) -> targetDF
+targetDF
+}
+```
+
+
+```{r budgetDF}
+budgetDF ={
+  targetDataList[[1]] %>%
+  get_budgetDFfromMonthData()
+targetDataList[[2]] %>%
+  get_budgetDFfromMonthData()
+targetDataList[[3]]
+
+targetDataList %>%
+  map_dfr(
+    get_budgetDFfromMonthData
+  ) -> budgetDF
+
+budgetDF
+}
+
+```
+

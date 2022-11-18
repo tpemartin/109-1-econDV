@@ -1,0 +1,274 @@
+---
+title: "台灣景氣循環"
+drake_cache: ".aesthetics3"
+output: html_document
+---
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=T)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(scales)
+library(colorspace)
+library(econDV)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+
+dataFilename=file.path(dataFolder, "taiwanBusinessCycles.Rdata")
+if(!file.exists(dataFilename)){
+  xfun::download_file("https://www.dropbox.com/s/50jb8va5shyxfse/taiwanBusinessCycles.Rdata?dl=1",dataFilename)
+}
+load(dataFilename)
+```
+
+## data
+
+```{r df_bcWithLights}
+df_bcWithLights = {
+  
+  df_realGDP %>%
+    left_join(
+      businessCycleLights %>%
+        select(
+          date, `景氣對策信號(分)`
+        ),
+      by = c("time" = "date")
+    ) -> df_realGDP2
+
+  df_realGDP2$`景氣對策信號(分)` %>%
+    cut(c(8, 16, 22, 31, 37, 45)) -> df_realGDP2$light
+  
+  # levels(df_realGDP2$light) -> lightScoreRage
+  # 
+  # levels(df_realGDP2$light) <-
+  #   c("#1d1bce", "#ccc980", "#d4fcd7", "#f9b32f", "#fd1b19")
+
+  df_realGDP2 %>%
+    na.omit()
+}
+```
+
+## graph
+
+```{r canvas}
+canvas = ggplot(
+  data=df_bcWithLights,
+  mapping=aes(
+    x=time, y=growthRate
+  ))
+```
+
+```{r plt_basic}
+plt_basic = {
+  canvas +
+    geom_line(size=1.5)
+}
+```
+
+```{r}
+plt_basic
+```
+
+```{r plt_withColors}
+plt_withColors0 = {
+  plt_basic +
+    geom_line(
+      aes(color=light)
+    )
+}
+```
+
+```{r}
+plt_withColors0
+```
+
+```{r plt_withColors}
+plt_withColors = {
+  plt_basic +
+    geom_line(
+      aes(color=light, group=1)
+    )
+}
+```
+
+```{r}
+plt_withColors
+```
+
+
+ggplot將燈號顏色視為qualitative（不可排序類別）
+```{r}
+canvas$data$light %>% is.ordered()
+```
+
+將燈號改成ordered factor
+
+```{r canvasOrdered}
+canvasOrdered = { 
+  plt_basic %+% # %+% 會將data frame替換掉
+    {
+      df_bcWithLights %>%
+        mutate(
+          light=ordered(light)
+        )
+    }
+}
+```
+
+
+```{r plt_withColors_order}
+plt_withColors_order = {
+  canvasOrdered +
+    geom_line(
+      aes(color=light, group=1)
+    )
+  }
+```
+
+```{r}
+plt_withColors_order
+```
+
+改變圖例說明:
+```{r plt_color_orderLegend}
+plt_color_orderLegend <- {
+  plt_withColors_order +
+    scale_color_viridis_d(
+      name = "景氣訊號",
+      labels = c("低迷", "低迷-穩定間", "穩定", "穩定-熱絡", "熱絡")
+    )
+}
+```
+
+```{r}
+plt_color_orderLegend
+```
+
+### 手動設定
+
+#### scale_color_manual{-}
+
+ggplot內訂的qualitative color
+```{r plt_qualitative_default}
+plt_qualitative_default= {
+  canvas +
+  geom_line(
+    size=1.5
+  ) +
+  geom_line(
+    aes(color=light, group=1)
+  ) 
+}
+```
+
+手動修改
+
+手動修改
+```{r}
+plt_withColors + 
+  scale_color_manual(
+    values=c("#a20a0a","#ffa36c","#f6eec9", "#799351", "#892cdc", "#16a596")
+  )
+```
+
+### 使用調色盤
+
+##### 連續顏色{-}
+
+```{r}
+myRY_palette <- function(x){
+  return(
+    rgb(1, x*1,0 ) 
+  )
+}
+
+```
+
+```{r}
+myRY_palette = function(x) hcl(h=120*x)
+
+library(dplyr)
+library(purrr)
+x=seq(0, 1, by=0.05)
+
+x %>%
+  map_chr(myRY_palette) %>%
+  scales::show_col(ncol = length(x), labels = F)
+```
+
+
+```{r myRY_palette}
+myRY_palette = 
+  scales::colour_ramp(
+    c(hcl(0),hcl(120))
+  )
+
+```
+
+```{r scale_color_myRY}
+# 製作獨家scale_color_XXX函數
+scale_color_myRY = function(...){
+  continuous_scale(
+  "color", # 給什麼aesthetic元素用
+  "myRY_palette", # 有錯誤時要怎麼稱呼你的scale
+  palette=myRY_palette, # palette function: [0,1] -> color
+  ...)
+}
+```
+
+##### 間斷顏色{-}
+
+```{r}
+library(colorspace)
+```
+
+
+```{r myHuePalette}
+myHuePalette = hue_pal(h=c(100,200))
+
+hueDisc = data.frame(
+  r=1,
+  theta=seq(0,360, by=5)
+)
+ggplot(hueDisc)+
+  geom_col(
+    aes(
+      x=r,
+      y=theta,
+      fill=theta
+    )
+  ) +
+  coord_polar(theta="y")
+
+```
+
+```{r scale_color_myHue}
+scale_color_myHue = function(...){
+  discrete_scale(
+    "color",
+    "myHue",
+    palette=myHuePalette,
+    ...
+  )
+}
+```
+

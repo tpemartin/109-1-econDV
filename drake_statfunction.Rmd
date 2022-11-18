@@ -1,0 +1,250 @@
+---
+title: "statfunction"
+drake_cache: ".statfunction"
+---
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Stat function
+## Drake plan
+```{r makecondition, eval=T, echo=F}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(stringr)
+library(ggplot2)
+library(econDV)
+library(scales)
+library(colorspace)
+library(purrr)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+theme_set(theme_classic())
+```
+## 直方圖
+### x軸變數特質
+#### 間斷變數{-}
+#### 連續變數{-}
+## The Economist
+## 2020台灣總統大選
+```{r makecondition2}
+election2020 = jsonlite::fromJSON(
+  "https://www.dropbox.com/s/a3torx0p41hheb6/presidentElection2020.json?dl=1"
+)
+
+```
+```{r canvas}
+canvas = ggplot(data=election2020) 
+```
+```{r plt_election01}
+plt_election01 = {
+  canvas + 
+  geom_col(
+    aes(
+      x=`鄉(鎮、市、區)別`, 
+      y=`(3)
+ 蔡英文
+ 賴清德`)
+  )
+}
+```
+```{r plt_election_turnX270}
+plt_election_turnX270 = {
+  plt_election01 +
+    theme(
+      axis.text.x = 
+        element_text(angle=270, size=unit(10, "pt"))
+      # angle = 90, "區峽三"，angle = -90 (要寫360-90) 才"三峽區"
+      )+
+      labs(
+        title="2020台灣總統大選",
+        subtitle = "民進黨候選人得票率（單位：%）",
+        caption="中央選舉委員會",
+        y="", x=NULL
+      )
+}
+```
+#### 文字直排{-}
+```{r plt_election_xVeritical}
+plt_election_xVeritical = {
+  plt_election01 %+% 
+    {
+      # 行政區名每個字換行
+      plt_election01$data$`鄉(鎮、市、區)別` %>%
+        stringr::str_split("") %>%
+        map_chr(paste0, collapse="\n") ->
+        plt_election01$data$`鄉(鎮、市、區)別`
+      
+      plt_election01$data # { }最後一行必需是個data frame
+    } +
+      labs(
+        title="2020台灣總統大選",
+        subtitle = "民進黨候選人得票率（單位：%）",
+        caption="中央選舉委員會",
+        y=NULL, x=NULL
+      )
+}
+```
+```{r str_turnVertical}
+str_turnVertical = function(strVector){
+  require(dplyr)
+  strVector %>%
+    stringr::str_split("") %>%
+    purrr::map_chr(paste0, collapse="\n")
+}
+```
+```{r plt_election_verticalWord}
+plt_election_verticalWord = {
+  plt_election01 %+% {
+    plt_election01$data %>%
+      mutate(
+        `鄉(鎮、市、區)別`=
+          str_turnVertical(`鄉(鎮、市、區)別`)
+        )
+    }
+}
+```
+#### 圖片取色{-}
+```{r plt_election01_green}
+plt_election01_green = {
+  canvas + 
+  geom_col(
+    aes(
+      x=`鄉(鎮、市、區)別`, 
+      y=`(3)
+ 蔡英文
+ 賴清德`), fill="#5E9A43"
+  )
+}
+```
+```{r plt_election_xVeritical_green, echo=F}
+plt_election_xVeritical_green = {
+  plt_election_xVeritical
+
+  plt_election_xVeritical$layers[[1]]$aes_params$fill <- "#5E9A43"
+  
+  plt_election_xVeritical
+} 
+```
+```{r plt_election_verticalWord_green}
+plt_election_verticalWord_green ={
+    plt_election_verticalWord # 另外取名，方便後面討論
+}
+```
+#### 改變排序{-}
+```{r data_chosenLevels}
+data_chosenLevels = {
+  plt_election_xVeritical_green$data %>%
+  arrange(`(3)
+ 蔡英文
+ 賴清德`) %>%  # ---> (*)
+  .$`鄉(鎮、市、區)別` -> chosenLevels
+  
+  plt_election_xVeritical_green$data %>%
+    mutate(
+      `鄉(鎮、市、區)別`=factor(
+        `鄉(鎮、市、區)別`,
+        levels=chosenLevels # ---> (**)
+      )
+    )
+}
+```
+```{r plt_election_xVeritical_green_chosenLevels}
+plt_election_xVeritical_green_chosenLevels = {
+  plt_election_xVeritical_green %+%
+    data_chosenLevels
+}
+```
+```{r data_chosenLevels_rev, echo=F}
+data_chosenLevels_rev = {
+  plt_election_xVeritical_green$data %>%
+  arrange(`(3)
+ 蔡英文
+ 賴清德`) %>%  # ---> (*)
+  .$`鄉(鎮、市、區)別` -> chosenLevels
+  
+  plt_election_xVeritical_green$data %>%
+    mutate(
+      `鄉(鎮、市、區)別`=factor(
+        `鄉(鎮、市、區)別`,
+        levels=rev(chosenLevels) # ---> (**)
+      )
+    )
+}
+```
+```{r plt_election_xVeritical_green_chosenLevels_rev, echo=F}
+plt_election_xVeritical_green_chosenLevels_rev = {
+  plt_election_xVeritical_green %+%
+    data_chosenLevels_rev
+}
+```
+### touch ground
+```{r plt_xVertical_yGrounded}
+plt_xVertical_yGrounded = {
+  plt_election_xVeritical_green_chosenLevels_rev +
+  scale_y_continuous(
+    expand = expansion(mult = 0, add = 0) # since it's default, expansion() will do
+  )
+}
+```
+### theme setting
+#### theme design
+```{r testPlot}
+testPlot = {
+    testdata <- 
+      data.frame(
+        x=1:100,
+        y=1:100
+      )
+    ggplot(testdata) +
+      geom_blank(
+        aes(x=x, y=y)
+      )
+  }
+```
+```{r theme_method1}
+theme_method1 <- theme(
+  axis.ticks.x = element_blank(),
+  axis.line.y = element_blank(),
+  axis.ticks.y = element_blank(),
+  panel.grid.major.y = element_line(size=0.5, colour = "#b8c7d0")
+)
+```
+```{r theme_method2}
+theme_method2 = function(...){
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.line.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major.y = element_line(size=0.5, colour = "#b8c7d0"),
+    ...
+  )
+}
+```
+```{r theme_method3}
+theme_method3 = function(otherThemeSetting=theme()){
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.line.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major.y = element_line(size=0.5, colour = "#b8c7d0")
+  ) + otherThemeSetting
+}
+```
+#### Economist Bar theme
+```{r add_theme_economist}
+add_theme_economist <- function(gg,...){
+  assertthat::assert_that(is.ggplot(gg))
+  gg+scale_y_continuous(
+      expand=expansion(0,0))+
+    theme_method2(...)
+}
+```
+#### 改變width{-}
+#### 改變高寬比例aspect.ratio{-}
+#### 座標改變{-}

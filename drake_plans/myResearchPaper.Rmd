@@ -1,0 +1,46 @@
+---
+title: "my research paper"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+knitr::opts_chunk$set(fig.showtext=TRUE, fig.retina = 1)
+library(showtext)
+library(dplyr)
+library(ggplot2)
+font_add("Noto Sans TC", # 把字形加到R系統裡，取名為notoSansTC family
+         regular="NotoSansTC-Regular.otf", # family裡的regular字體檔名
+         bold="NotoSansTC-Bold.otf") # family裡的bold字體檔名
+
+showtext_auto()
+theme(
+  text=element_text(family = "Noto Sans TC")
+  ) %>%
+  theme_set()
+source("plan_drake_graphing_basics.R")
+```
+
+## GitHub Documents
+
+This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+
+## Including Code
+
+You can include R code in the document as follows:
+
+```{r}
+load_plan_drake_graphing_basics(ggline2Y3Y) 
+ggline2Y3Y
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+load_plan_drake_graphing_basics(ggTwbInterestRates_bw)
+ggTwbInterestRates_bw
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -18,6 +18,7 @@ library(ggplot2)
 library(drake)
 library(rmd2drake)
 library(dplyr)
+library(stringr)
 library(showtext)
 showtext_auto()
 theme(
@@ -97,16 +98,6 @@ ggLinePoint={
 }
 ```
 
-```{r ggpoint}
-ggpoint <- {
-  ggline +
-    geom_point(
-      aes(x = 西元年月, y = `定存利率-一個月-固定`),
-      subsetDataTWbank
-    )
-}
-
-```
 
 
 ```{r ggline3M, drake=F}

@@ -1,0 +1,49 @@
+---
+title: "plan_taiwanBusinessCycles"
+drake_cache: ".myCache"
+params:
+  key: "公Aa-Ⅳ-1"
+  memberGmails: ["mary@gm.ntpu.edu.tw","cook@gmail.com"]
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+memberGmails: 為組員進入google classroom的gmail
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(rmd2drake)
+library(drake)
+
+# If you use git and does not want to track cache folder, put down the following command:
+# set_gitignore(".myCache")
+```
+
+## makecondition
+
+```{r makecondition}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(svglite)
+```
+
+## Data
+
+
+```{r budgetDF5to9}
+budgetDF5to9 ={
+  load(file_in("budgetDF5to9.Rda"))
+  budgetDF5to9 <<- budgetDF5to9
+  budgetDF5to9
+} 
+```
+
+```{r target2}
+target2 = {
+  budgetDF5to9
+}
+```
+
+

@@ -1,0 +1,15 @@
+---
+title: "Technique"
+drake_cache: ".technique"
+---
+
+
+```{r cars}
+cars = summary(cars)
+```
+
+```{r pressure}
+pressure={
+  plot(pressure)
+}
+```

@@ -1,0 +1,116 @@
+---
+title: "Covid-19 fiscal budget"
+drake_cache: ".covid19"
+params:
+  key: "公Cc-Ⅳ-1"
+  memberGmails: ["mary@gm.ntpu.edu.tw","cook@gmail.com"]
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+memberGmails: 為組員進入google classroom的gmail
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(rmd2drake)
+library(drake)
+
+# If you use git and does not want to track cache folder, put down the following command:
+# set_gitignore(".myCache")
+```
+
+## makecondition
+
+```{r makecondition}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(svglite)
+library(WDI)
+library(xml2)
+```
+
+## data
+
+```{r targetDataListFun}
+targetDataListFun = function(url){
+  covid19Expense05 <- xml2::read_xml(url)
+  covid19Expense05 <- as_list(covid19Expense05)
+  
+  covid19Expense05$CGBAH100T_中央政府總預算收支執行狀況月報表本年度部分 -> targetDataList
+  targetDataList
+}
+```
+
+```{r listOfUrl}
+listOfUrl ={
+  list(
+    "https://www.mof.gov.tw/download/c9e382ef465b40999cb31cf2dd376671",
+    "https://www.mof.gov.tw/download/eaa49b3997d84c70ab732b919c18361e",
+    "https://www.mof.gov.tw/download/fccd0f328a9a41e28768a500a6cf33f7",
+    "https://www.mof.gov.tw/download/1bb58fd19a844757b9ae6d10875716c0",
+    "https://www.mof.gov.tw/download/346ee1bf991b4a06980e83747ee402bd"
+  )
+}
+```
+
+```{r list_targetDataList}
+list_targetDataList = {
+  listOfUrl %>%
+    map(
+      targetDataListFun
+    ) 
+}
+```
+
+
+```{r budgetDF5to9}
+budgetDF5to9 = {
+  list_targetDataList %>%
+  map_dfr(
+    get_budgetDFfun
+  )
+}
+```
+
+
+```{r get_budgetDFfromMonthData}
+get_budgetDFfromMonthData = function(targetBudgetMonth)
+{
+  
+#   targetBudgetMonth[1:11]
+# targetBudgetMonth %>%
+#   map(
+#    ~length(.x)
+#   )
+
+targetBudgetMonth[1:11] %>%
+  map_dfc(
+    ~.x[[1]]
+  ) -> targetDF
+targetDF
+}
+```
+
+
+```{r get_budgetDFfun}
+get_budgetDFfun =function(targetDataList){
+
+targetDataList %>%
+  map_dfr(
+    get_budgetDFfromMonthData
+  ) -> budgetDF
+
+budgetDF
+}
+
+```
+
+```{r saveBudgetDF}
+saveBudgetDF = {
+  save(budgetDF5to9,    file="budgetDF5to9.Rda")
+}
+
+```
+

@@ -1,0 +1,16 @@
+
+設定setup chunk
+```{r setup, include=FALSE}
+## 你的makecondition
+
+## 產生可讀取drake_cache的loaddd函數
+source("plan_drake_xxx.R")
+loaddd <- load_plan_drake_xxx
+```
+
+需要target時，使用
+```{r}
+loaddd(targetK)
+targetK
+```
+

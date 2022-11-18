@@ -1,0 +1,214 @@
+---
+title: "election"
+output: html_document
+params:
+  key: "公Cc-Ⅴ-1"
+  memberGmails: ["genwhisbrand@gmail.com","chickenhamgod@gmail.com","kao86200@gmail.com"]
+---
+
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+library(lubridate)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+# .pj$make_fix_file() -> .root
+# 
+# imageFolder <- file.path(.root(),"img")
+# dataFolder <- file.path(.root(),"data")
+# 
+# if(!dir.exists(imageFolder)) dir.create(imageFolder)
+# if(!dir.exists(dataFolder)) dir.create(dataFolder)
+```
+
+
+```{r datadownload}
+
+datadownload = {
+  # 下載google drive檔案 share link 到本機project folder, 本以graph4week.csv名稱儲存
+  googledrive::drive_download(
+    file_in("https://drive.google.com/file/d/1fnd0u6W-OgphKbYI89U1VX_DAgIELhZd/view?usp=sharing"),
+    path=file.path(dataFolder,"DJI.csv"),
+    overwrite = T
+  )
+  
+  # 自本機project folder裡引入graph4week.csv為graph4week1 data frame物件
+  DJI <- read_csv(
+    file.path(dataFolder,"DJI.csv")
+  )
+}
+
+```
+
+
+```{r readcsv}
+DJI<-read.csv("D:/econDV/DJI.csv")
+```
+
+```{r}
+DJI$Date <- ymd(DJI$Date)
+```
+
+```{r}
+DJI %>% filter(DJI$Date >ymd(c("2008-01-01"))) -> electionall
+electionall %>% filter(electionall$Date <ymd(c("2020-12-31")))  ->electionall
+
+DJI %>% filter(DJI$Date >ymd(c("2008-01-01"))) -> election2008
+election2008 %>% filter(election2008$Date <ymd(c("2008-12-31")))  ->election2008
+
+DJI %>% filter(DJI$Date >ymd(c("2012-01-01"))) -> election2012
+election2012 %>% filter(election2012$Date <ymd(c("2012-12-31")))  ->election2012
+
+DJI %>% filter(DJI$Date >ymd(c("2016-01-01"))) -> election2016
+election2016 %>% filter(election2016$Date <ymd(c("2016-12-31")))  ->election2016
+```
+
+
+
+```{r}
+election =data.frame(
+  title = c("election2008","election2012","election2016"),
+  start=ymd(c("2008-10-22","2012-10-24","2016-10-26")),
+  end=ymd(c("2008-11-18","2012-11-20","2016-11-22"))
+)
+election01 =data.frame(
+  title = c(election2008),
+  start=ymd(c("2008-10-22")),
+  end=ymd(c("2008-11-18"))
+)
+
+election02 =data.frame(
+  title = c(election2012),
+  start=ymd(c("2012-10-24")),
+  end=ymd(c("2012-11-20"))
+)
+
+election03 =data.frame(
+  title = c(election2016),
+  start=ymd(c("2016-10-26")),
+  end=ymd(c("2016-11-22"))
+)
+```
+
+
+```{r}
+ggplotWithElectionall ={
+  ggplot()+
+  geom_line(data=electionall,mapping = aes(x=Date,y=Open
+                                             ,alpha=0.2))+
+  geom_rect(
+      mapping = aes(xmin = start, xmax = end),
+      data = election,
+      alpha= 0.5,
+      ymax = Inf, ymin = -Inf)
+}
+```
+
+
+```{r}
+breakx = ymd(c("2008-01-02","2010-01-04","2015-01-02","2020-01-02","2020-10-29"))
+```
+
+
+```{r plot_breaksEditted}
+ggplotWithScale = {
+  ggplotWithElectionall +
+    scale_x_date(
+      breaks = breakx
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )+
+    labs(title ="How election influence America finance")+
+    labs(subtitle ="2008,2012,2016 elections")+
+    labs(caption="https://finance.yahoo.com/quote/%5EDJI/history?p=%5EDJI")
+   
+}
+
+```
+
+```{r}
+ggplotWithScale
+```
+
+
+
+```{r}
+ggplotWithElection01 ={
+  ggplot()+
+  geom_line(data=election2008,mapping = aes(x=election2008$Date,election2008$Open,alpha=0.2))+
+  geom_rect(
+      mapping = aes(xmin = start, xmax = end),
+      data = election01,
+      alpha= 0.005,
+      ymax = Inf, ymin = -Inf)
+}
+```
+
+```{r}
+ggplotWithElection01
+```
+
+```{r}
+ggplotWithElection02 ={
+  ggplot()+
+  geom_line(data=election2012,mapping = aes(x=election2012$Date,election2012$Open,alpha=0.2))+
+  geom_rect(
+      mapping = aes(xmin = start, xmax = end),
+      data = election02,
+      alpha= 0.005,
+      ymax = Inf, ymin = -Inf)
+}
+```
+
+```{r}
+ggplotWithElection02
+```
+
+```{r}
+ggplotWithElection03 ={
+  ggplot()+
+  geom_line(data=election2016,mapping = aes(x=election2016$Date,election2016$Open,alpha=0.2))+
+  geom_rect(
+      mapping = aes(xmin = start, xmax = end),
+      data = election03,
+      alpha= 0.005,
+      ymax = Inf, ymin = -Inf)
+}
+```
+
+```{r}
+ggplotWithElection03
+```
+
+
+
+```{r save_ggplot}
+save_ggplot = {
+
+  ggsave(
+    plot=ggplotWithScale,
+    filename=file.path("D:/econDV", "myPlot.svg"),
+    width = 8,
+    height = 5
+  )
+}
+```
+
+```{r save_ggplot}
+save_ggplot = {
+
+  ggsave(
+    plot=ggplotWithElection03,
+    filename=file.path("D:/econDV", "myPlot03.svg"),
+    width = 8,
+    height = 5
+  )
+}
+```

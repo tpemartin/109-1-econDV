@@ -1,0 +1,103 @@
+---
+title: "台灣景氣循環：經濟成長率 v.s. 失業率"
+drake_cache: ".geom_path"
+output: html_document
+---
+
+key請由課綱選：
+新課綱：<https://docs.google.com/document/d/1o8UQIpy6GFqCgfUxc47fqyAPuEYrk3FLd7bB1EhYMVg>
+
+  * 圖片一定要有Title, subtitle, 及資料來源。
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+library(lubridate)
+library(ggrepel)
+library(scales)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+
+jsonlite::fromJSON("https://www.dropbox.com/s/q7h63r8p497q7xz/df_gdp_unemployment4label.json?dl=1") -> df_gdp_unemployment4label
+jsonlite::fromJSON("https://www.dropbox.com/s/dukzr6w2wj5vzfv/df_gdp_unemployment4plt.json?dl=1") -> df_gdp_unemployment4plt
+
+
+```
+
+```{r}
+df_gdp_unemployment4label$time <- ymd(df_gdp_unemployment4label$time)
+df_gdp_unemployment4plt$time <- ymd(df_gdp_unemployment4plt$time)
+
+```
+
+
+
+```{r}
+plt_bcUnemployment = {
+  ggplot(df_gdp_unemployment4label)+
+    
+    geom_line(
+      mapping=aes(color="#A7414A",
+        x=time, y=lag(growthRate),
+      ), alpha=1, size=2
+    )+geom_line(
+      mapping=aes(color="#6A8A82",
+        y=D4_urate2,x=time, 
+      ), alpha=1, size=2
+    )+
+    scale_x_date(name="時間",date_breaks = "5 year",labels = date_format("%Y"))+
+    scale_y_continuous(name=expression("失業率變化"),limits=c(-2.5,12.5),sec.axis = sec_axis(~.,name = "經濟成長率"))+
+    geom_point(
+      mapping=aes(
+        x=time, y=lag(growthRate),
+      ), size=1
+    )+
+    geom_text_repel(
+      data=df_gdp_unemployment4label,
+      aes(
+        x=time, y=lag(growthRate),
+        label=label
+      ), size=3, alpha=0.3
+    )+
+    geom_point(
+      mapping=aes(
+        y=D4_urate2,x=time,
+      ), size=1
+    )+
+    labs(
+      title="1982年第1季-2020年第3季 前一季經濟成長率與失業率變化的時間軌跡",
+      subtitle = "年份標示點為該年1月，失業率變化是當季失業率減去去年同季失業率\n單位：%",
+      caption="資料來源: 行政院主計總處")+
+          theme(axis.text.x = element_text(vjust = 0.5, angle = 45))
+ 
+}
+```
+
+```{r}
+plt_bcUnemployment+
+  scale_color_discrete(labels=c("經濟成長率","失業率變化"))
+```
+

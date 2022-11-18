@@ -1,0 +1,110 @@
+---
+title: "growth"
+drake_cache: ".geom_path"
+output: html_document
+---
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+
+library(ggrepel)
+
+#econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+
+jsonlite::fromJSON("https://www.dropbox.com/s/q7h63r8p497q7xz/df_gdp_unemployment4label.json?dl=1") -> df_gdp_unemployment4label
+jsonlite::fromJSON("https://www.dropbox.com/s/dukzr6w2wj5vzfv/df_gdp_unemployment4plt.json?dl=1") -> df_gdp_unemployment4plt
+
+df_gdp_unemployment4plt <- na.omit(df_gdp_unemployment4plt)
+
+df = data.frame(xx = c("2003-01-01", "2013-01-01", "1993-01-01", "1983-01-01"), yy = c(0,0,0, 0))
+```
+
+
+```{r plt_bcUnemployment}
+plt_bcUnemployment = {
+  ggplot(df_gdp_unemployment4plt)+
+    geom_col(
+      mapping=aes(
+        x= time , 
+          y = D4_urate2#, y=lag(growthRate),
+        
+      ), #alpha=0.1,
+      show.legend = FALSE, fill = "#00296b",#labels = NULL,
+      
+      size=1
+    )+  theme(axis.text.x = element_blank()) +
+        theme(axis.ticks.x = element_blank()) +
+    
+    
+        #scale_x_continuous(breaks = c(2003-01-01, 2013-01-01), labels = c('2003', '2013')) +
+    # geom_point(
+    #   data = df,
+    #   aes(
+    #     x=xx, y=yy,
+    #   ), size=0.5
+    # )+
+    
+    
+    geom_col(
+      mapping=aes(
+        x= time , 
+          y= - lag(growthRate)
+        
+      ), #alpha=0.1,
+      show.legend = FALSE, fill = "#c44536",#labels = NULL,
+      
+      size=1
+    )+
+    
+      theme(axis.title.y =element_text(vjust = 0.55,color="firebrick4",angle=0))+
+    
+    # geom_text_repel(
+    #   data=df_gdp_unemployment4label,
+    #   aes(
+    #     x=D4_urate2, y=lag(growthRate),
+    #     label=label
+    #   ), size=3, alpha=0.3
+    # )+
+    labs(
+      title="Unemployment vs Lagged Economic growth",
+      subtitle = "year:1982-2020",
+      x="time ( every three month )",
+      y="Unemployment rate\n vs\n 'Negative'\n Lagged Economic growth"
+    ) -> plt_bcUnemployment
+  ggsave(plt_bcUnemployment,
+         file="img/plt_bcUnemployment.svg",
+         width=8, height=3)  
+  plt_bcUnemployment
+}
+```
+
+
+```{r}
+plt_bcUnemployment
+```
+

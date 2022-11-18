@@ -1,0 +1,55 @@
+---
+title: "class management"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup
+
+```{r makecondition}
+library(googleclassroom)
+library(googledrive)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+
+load(file.path(.root(),"109-1-courseInfo.Rdata"))
+```
+
+```{r courseInfo}
+courseInfo = {
+  googleclassroom::classroomService() -> cs
+  cs$list_activeCourses() -> myCourses
+  myCourses$courses %>% 
+    purrr::keep(
+      ~{.x$name ==
+          "109-1經濟資料視覺化處理"}
+    ) -> courseInfo  
+  save(courseInfo, file="109-1-courseInfo.Rdata")
+  courseInfo
+}
+```
+
+```{r}
+courseInfo
+```
+
+## Weekly chart
+
+```{r wc_download}
+gc <- googleclassroom::classroomService()
+gc$list_courseworksAsDataframe(courseInfo[[1]]$id)  ->
+  df_studentSubmissions
+  
+gc$download_studentRmds(title="Weekly chart 1
+")
+```
+

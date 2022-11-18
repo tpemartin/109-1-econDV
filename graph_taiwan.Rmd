@@ -1,0 +1,452 @@
+---
+title: "Encapsulation"
+drake_cache: ".chartTaiwanMap"
+output: html_document
+---
+
+
+```{r setup, include=FALSE, drake=F}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+library(drake)
+library(econDV)
+library(dplyr)
+
+```
+
+## makecondition
+
+```{r makecondition}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(googledrive)
+library(readr)
+library(ggplot2)
+library(econDV)
+econDV::setup_chinese(need2Knit = F)
+rprojroot::is_rstudio_project -> .pj
+.pj$make_fix_file() -> .root
+
+imageFolder <- file.path(.root(),"img")
+dataFolder <- file.path(.root(),"data")
+
+if(!dir.exists(imageFolder)) dir.create(imageFolder)
+if(!dir.exists(dataFolder)) dir.create(dataFolder)
+```
+
+## Programming for Workflow
+
+### Initiate
+
+  data -> graph 
+
+```{r}
+data$graph()
+```
+  
+  ->> simplify
+  
+```{r}
+data$simplify()
+```
+
+  ->> crop 
+  
+```{r}
+data$crop()
+```
+
+***
+
+This means
+```{r}
+data <- list(
+  graph=function(){},
+  simplify=function(){},
+  crop=function(){}
+)
+```
+
+### Morphism
+
+Once `data$fun()`, 
+```{r}
+data <- list(
+  graph=function(){},
+  simplify=function(){},
+  crop=function(){},
+  restore=function(){}
+)
+```
+
+
+## Environment
+
+```{r}
+data <- new.env(parent=.GlobalEnv) 
+rlang::with_env(
+    data,
+    {
+      graph=function(){}
+      simplify=function(){}
+      crop=function(){}
+    }
+)
+```
+
+```{r}
+data <- new.env(parent=.GlobalEnv) 
+rlang::with_env(
+    data,
+    {
+      graph=function(){}
+      simplify=function(){
+        data$restore <- function(){}
+      }
+      crop=function(){
+        data$restore <- function(){}
+      }
+    }
+)
+```
+
+```{r}
+data$crop()
+data$simplify() # morphism
+```
+
+### Function environment
+
+`graph/simplify/crop` have the same function environment, which means:
+
+> When function body in execution miss something, it will look for its existence in the function environment (which is data herer).
+
+```{r}
+data <- new.env(parent=.GlobalEnv) 
+rlang::with_env(
+    data,
+    {
+      .execution_data
+      graph=function(){
+        data$.execution_data->
+      }
+      simplify=function(){
+        data$.execution_data ->
+        data$.backup_data <-
+        data$restore <- function(){
+          data$.execution_data <-
+            data$.backup_data
+        }
+      }
+      crop=function(){
+        data$restore <- function(){
+          data$.execution_data <-
+            data$.backup_data
+        }
+      }
+    }
+)
+```
+
+  
+### Simple Feature application
+
+```{r}
+dataSource <- "/Users/martinl/Dropbox/github-data/109-1-econDV/直轄市、縣市界線(TWD97經緯度)SHP格式/COUNTY_MOI_1090820.shp"
+
+shp <- list()
+require(dplyr)
+require(ggplot2)
+Data <- new.env(parent=.GlobalEnv) 
+Data$.execution_data <-
+  sf::st_read(dataSource)
+rlang::with_env(
+    Data,
+    {
+      graph=function(){
+        Data$.execution_data %>%
+          ggplot()+geom_sf()
+      }
+      simplify=function(){
+        Data$.backup_data <-
+          Data$.execution_data
+        Data$.execution_data %>%
+          rmapshaper::ms_simplify() ->
+          Data$.execution_data
+        
+        Data$restore <- function(){
+          Data$.execution_data <-
+            Data$.backup_data
+        }
+      }
+      crop=function(xmin, xmax, ymin, ymax){
+        y <- 
+          setNames(c(xmin, xmax, ymin, ymax), 
+                   c("xmin", "xmax", "ymin", "ymax"))
+        Data$.backup_data <-
+          Data$.execution_data
+        Data$.execution_data %>%
+          sf::st_crop(
+            y
+          ) ->
+          Data$.execution_data
+         Data$restore <- function(){
+          Data$.execution_data <-
+            Data$.backup_data
+        }
+      }
+    }
+)
+shp$data <- Data
+```
+
+```{r}
+shp$data$graph() # take too much time
+```
+
+```{r}
+shp$data$simplify()
+shp$data$graph() # much faster
+```
+
+
+```{r}
+# debug(shp$data$crop)
+shp$data$crop(
+  xmin=120, xmax=123,
+  ymin=22, ymax=26
+)
+shp$data$graph()
+```
+### Function environment revisit
+
+```{r}
+environment(shp$data$restore)
+```
+```{r}
+shp$data
+```
+They are different, meaning restore function in execution will not see `data$.execution_data/.backup_data`.
+
+```{r}
+shp <- list()
+require(dplyr)
+require(ggplot2)
+Data <- new.env(parent=.GlobalEnv) 
+Data$.execution_data <-
+  sf::st_read(dataSource)
+rlang::with_env(
+    Data,
+    {
+      graph=function(){
+        Data$.execution_data %>%
+          ggplot()+geom_sf()
+      }
+      simplify=function(){
+        Data$.backup_data <-
+          Data$.execution_data
+        Data$.execution_data %>%
+          rmapshaper::ms_simplify() ->
+          Data$.execution_data
+        
+        Data$restore <- restore
+      }
+      crop=function(xmin, xmax, ymin, ymax){
+        y <- 
+          setNames(c(xmin, xmax, ymin, ymax), 
+                   c("xmin", "xmax", "ymin", "ymax"))
+        Data$.backup_data <-
+          Data$.execution_data
+        Data$.execution_data %>%
+          sf::st_crop(
+            y
+          ) ->
+          Data$.execution_data
+         Data$restore <- restore
+      }
+      
+      ### helpers with Data as its function environment
+      restore <- function(){
+        Data$.execution_data <- Data$.backup_data
+      }
+    }
+)
+shp$data <- Data
+```
+
+
+```{r}
+shp$data$simplify()
+shp$data$crop(
+  xmin=120, xmax=123,
+  ymin=22, ymax=26
+)
+shp$data$graph()
+```
+
+
+```{r}
+environment(shp$data$restore)
+```
+```{r}
+shp$data
+```
+
+```{r}
+shp$data$restore()
+shp$data$graph()
+```
+
+## Exercise
+
+Make the following method work:
+```{r}
+shp$data$export() -> finalData
+```
+so that finalData will be the `$.execution_data` object value.
+
+Then design a function called **SHP**:
+
+Input argument:
+
+  * dataSource
+  
+Return: an **shp** instance that works out like our previous demonstration.
+
+```{r SHP}
+SHP <- function(dataSource) {
+  shp <- list()
+  require(dplyr)
+  require(ggplot2)
+  Data <- new.env(parent = .GlobalEnv)
+  Data$.execution_data <-
+    sf::st_read(dataSource)
+  rlang::with_env(
+    Data,
+    {
+      graph <- function() {
+        Data$.execution_data %>%
+          ggplot() +
+          geom_sf()
+      }
+      simplify <- function() {
+        Data$.backup_data <-
+          Data$.execution_data
+        Data$.execution_data %>%
+          rmapshaper::ms_simplify() ->
+        Data$.execution_data
+
+        Data$restore <- restore
+      }
+      crop <- function(xmin, xmax, ymin, ymax) {
+        y <-
+          setNames(
+            c(xmin, xmax, ymin, ymax),
+            c("xmin", "xmax", "ymin", "ymax")
+          )
+        Data$.backup_data <-
+          Data$.execution_data
+        Data$.execution_data %>%
+          sf::st_crop(
+            y
+          ) ->
+        Data$.execution_data
+        Data$restore <- restore
+      }
+
+      ### helpers with Data as its function environment
+      restore <- function() {
+        Data$.execution_data <- Data$.backup_data
+      }
+    }
+  )
+  shp$data <- Data
+  return(shp)
+}
+```
+
+```{r}
+dataSource <- "/Users/martinl/Dropbox/github-data/109-1-econDV/直轄市、縣市界線(TWD97經緯度)SHP格式/COUNTY_MOI_1090820.shp"
+shp <- SHP(dataSource)
+
+shp$data$simplify()
+shp$data$crop(
+  xmin=120, xmax=123,
+  ymin=22, ymax=26
+)
+shp$data$graph()
+```
+
+```{r}
+shp$data$restore()
+shp$data$graph()
+```
+
+## Simplified Version
+
+```{r SHP}
+SHP <- function(dataSource) {
+  shp <- list()
+  require(dplyr)
+  require(ggplot2)
+  Data <- new.env(parent = .GlobalEnv)
+  Data$.execution_data <-
+    sf::st_read(dataSource)
+  rlang::with_env(
+    Data,
+    {
+      graph <- function() {
+        .execution_data %>%
+          ggplot() +
+          geom_sf()
+      }
+      simplify <- function() {
+        Data$.backup_data <-
+          .execution_data
+        
+        .execution_data %>%
+          rmapshaper::ms_simplify() ->
+        Data$.execution_data
+
+        Data$restore <- restore
+      }
+      crop <- function(xmin, xmax, ymin, ymax) {
+        y <-
+          setNames(
+            c(xmin, xmax, ymin, ymax),
+            c("xmin", "xmax", "ymin", "ymax")
+          )
+        Data$.backup_data <-
+          .execution_data
+        .execution_data %>%
+          sf::st_crop(
+            y
+          ) ->
+        Data$.execution_data
+        Data$restore <- restore
+      }
+
+      ### helpers with Data as its function environment
+      restore <- function() {
+        Data$.execution_data <- .backup_data
+      }
+    }
+  )
+  shp$data <- Data
+  return(shp)
+}
+```
+
+
+```{r}
+library(sf)
+sf::st_read("/Users/martinl/Dropbox/github-data/109-1-econDV/直轄市、縣市界線(TWD97經緯度)SHP格式/COUNTY_MOI_1090820.shp") -> taiwanMap
+taiwanMap %>%
+  rmapshaper::ms_simplify() -> sf_taiwan_simplify
+sf_taiwan_simplify %>%
+  st_crop(
+    c(xmin=119, xmax=123,
+    ymin=21, ymax=26)
+  ) %>%
+  ggplot()+geom_sf()
+```

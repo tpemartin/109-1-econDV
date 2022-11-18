@@ -1,0 +1,263 @@
+---
+title: "drake_graphing_basics"
+drake_cache: ".graphingBasics"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+font_add("Noto Sans TC", # 把字形加到R系統裡，取名為notoSansTC family
+         regular="NotoSansTC-Regular.otf", # family裡的regular字體檔名
+         bold="NotoSansTC-Bold.otf") # family裡的bold字體檔名
+font_families() # 查看notoSansTC family有沒有成功加入
+```
+
+```{r makecondition}
+library(readr)
+library(ggplot2)
+library(drake)
+library(rmd2drake)
+library(dplyr)
+library(showtext)
+showtext_auto()
+theme(
+  text=element_text(family = "Noto Sans TC")
+  ) %>%
+  theme_set()
+
+rprojroot::is_rstudio_project -> pj
+pj$make_fix_file() -> root
+```
+
+## Data 
+
+```{r big5bankInterestRates}
+big5bankInterestRates = read_csv("https://www.cbc.gov.tw/public/data/OpenData/A13Rate.csv")
+```
+
+```{r}
+big5bankInterestRates$銀行 %>% unique()
+```
+```{r}
+big5bankInterestRates %>% names()
+```
+
+  * 關於字串的操作請見: 108-2 資料科學程式設計（一）影片05-06的三支片，
+      <https://vimeo.com/showcase/ntpu-programming-for-data-science>
+      pwd: 109-1-econ301
+    
+  
+```{r subsetDataTWbank}
+subsetDataTWbank = {
+  big5bankInterestRates %>%
+    mutate(
+       年月日={
+         191100+as.integer(年月) -> mockDate
+         paste0(stringr::str_sub(mockDate,1,4),"-",str_sub(mockDate,5,6),"-01") # 加了01日
+       },
+       西元年月=lubridate::ymd(年月日)
+    )  %>%
+    select(
+      "銀行", "西元年月", matches("定存利率-([一三六]個月|[一二三]年期)-固定")
+    ) %>%
+    filter(
+      銀行=="臺灣銀行"
+    )
+}
+```
+
+
+```{r}
+with(big5bankInterestRates, {
+         191100+as.integer(年月) -> mockDate
+         paste0(stringr::str_sub(mockDate,1,4),"-",str_sub(mockDate,5,6),"-01") # 加了01日
+       })
+```
+
+```{r subsetDataTWbank, drake=F}
+subsetDataTWbank = read_csv(
+  file_in("https://www.dropbox.com/s/t8ulj3d7cgl8jh5/subsetDataTWbank.csv?dl=1"))
+```
+
+
+```{r canvas}
+canvas = {
+  ggplot()
+}
+```
+
+
+```{r ggline}
+ggline <- {
+  canvas +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-一個月-固定`),
+      subsetDataTWbank
+    )
+}
+```
+
+```{r ggpoint}
+ggpoint <- {
+  ggline +
+    geom_point(
+      aes(x = 西元年月, y = `定存利率-一個月-固定`),
+      subsetDataTWbank
+    )
+}
+
+```
+
+
+```{r ggline3M, drake=F}
+ggline3M <- {
+  ggline +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三個月-固定`),
+      subsetDataTWbank
+    )
+}
+```
+
+```{r ggline3M}
+ggline3M <- {
+  ggline +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三個月-固定`),
+      subsetDataTWbank,
+      color="blue"
+    )
+}
+```
+
+```{r ggline1Y}
+ggline1Y = {
+  ggline3M +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-一年期-固定`),
+      subsetDataTWbank,
+      color="green"
+    )
+}
+
+```
+
+```{r ggline2Y3Y}
+ggline2Y3Y = {
+  ggline1Y + 
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-二年期-固定`),
+      subsetDataTWbank,
+      color="brown"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三年期-固定`),
+      subsetDataTWbank,
+      color="red"
+        )
+}
+```
+
+```{r canvas2}
+canvas2 = ggplot(data=subsetDataTWbank)
+```
+
+```{r ggline2Y3Y, drake=F}
+ggline2Y3Y = {
+  canvas +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-一個月-固定`),
+      subsetDataTWbank
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三個月-固定`),
+      subsetDataTWbank,
+      color = "blue"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-一年期-固定`),
+      subsetDataTWbank,
+      color = "green"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-二年期-固定`),
+      subsetDataTWbank,
+      color = "brown"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三年期-固定`),
+      subsetDataTWbank, 
+      color = "red"
+    )
+        
+}
+```
+
+
+```{r ggline2Y3Y_2}
+ggline2Y3Y_2 = {
+  canvas2 +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-一個月-固定`)
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三個月-固定`),
+      color = "blue"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-一年期-固定`),
+      color = "green"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-二年期-固定`),
+      color = "brown"
+    ) +
+    geom_line(
+      aes(x = 西元年月, y = `定存利率-三年期-固定`),
+      color = "red"
+    ) 
+    
+}
+```
+
+
+```{r ggTwbInterestRates}
+ggTwbInterestRates= {
+  ggline2Y3Y +
+    labs(
+      title="臺灣銀行不同期限定存利率",
+      subtitle="固定利率，單位：% 年率",
+      caption="資料出處: 政府開放資料平台https://data.gov.tw/dataset/10359",
+      y="",
+      x=""
+    )+theme_classic()
+}
+```
+
+```{r ggTwbInterestRates}
+ggTwbInterestRates_bw= {
+  ggTwbInterestRates +
+    theme_bw()
+}
+```
+
+```{r saveGgline}
+saveGgline = {
+  ggsave(
+    ggTwbInterestRates, 
+    file=file.path(
+      root(),"img/ggTwbInterestRates.svg"
+      ), width=8, height=5)
+}
+```
+
+## openSVG
+
+```{r ,afterMake=T, drake=F}
+svgOpen(
+      file.path(
+      root(),"img/ggTwbInterestRates.svg"
+      )
+      )
+
+```
